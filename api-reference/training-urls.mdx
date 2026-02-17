@@ -1,0 +1,48 @@
+---
+title: Train from URLs
+api: POST /v1/chatbots/{chatbot_id}/training/urls
+description: Scrape and train from web pages
+---
+
+Requires `training:write` scope. Rate limit: 10/minute.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<ParamField body="urls" type="string[]" required>
+  List of URLs to scrape and train on.
+</ParamField>
+
+<ParamField body="mode" type="string" default="individual">
+  `individual` to scrape each URL, or `sublinks` to also follow links on the page.
+</ParamField>
+
+<ParamField body="chunking_strategy" type="string" default="auto">
+  How to split content: `auto`, `individual`, or `semantic_groups`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/training/urls \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": [
+      "https://acme.com/docs/getting-started",
+      "https://acme.com/docs/api-reference"
+    ],
+    "mode": "individual"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 202
+{
+  "session_id": "train_def456",
+  "status": "queued",
+  "message": "2 URLs queued for processing"
+}
+```
+</ResponseExample>

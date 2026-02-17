@@ -1,0 +1,67 @@
+---
+title: Webhooks
+description: Get real-time notifications for chatbot events
+---
+
+Webhooks let you receive HTTP POST notifications when events happen in your chatbot — new conversations, handoffs, lead captures, training completions, and more.
+
+## Setup
+
+```bash
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc/webhooks \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/bgai",
+    "events": ["conversation.started", "lead.captured", "handoff.triggered"]
+  }'
+```
+
+## Payload format
+
+All webhook payloads follow this structure:
+
+```json
+{
+  "event": "conversation.started",
+  "chatbot_id": "bot_abc123",
+  "timestamp": "2025-01-15T10:30:00Z",
+  "data": {
+    "conversation_id": "conv_xyz",
+    "visitor_name": "John",
+    "visitor_email": "john@example.com",
+    "page_url": "https://acme.com/pricing"
+  }
+}
+```
+
+## Events
+
+| Event | Triggered when | Key data fields |
+|-------|---------------|-----------------|
+| `conversation.started` | New conversation begins | `conversation_id`, visitor info |
+| `conversation.ended` | Conversation is closed | `conversation_id`, `duration` |
+| `message.received` | New message sent | `message_id`, `content`, `role` |
+| `handoff.triggered` | AI transfers to human | `reason`, `conversation_id` |
+| `handoff.resolved` | Agent resolves handoff | `agent_id`, `resolution_time` |
+| `lead.captured` | Lead form submitted | `name`, `email`, `phone` |
+| `training.started` | Training begins | `session_id`, `source_count` |
+| `training.completed` | Training succeeds | `chunks_created` |
+| `training.failed` | Training fails | `error_message` |
+
+Use `*` to subscribe to all events.
+
+## Delivery & retries
+
+- Webhooks are delivered within seconds of the event
+- If your endpoint returns a non-2xx status, delivery is marked as failed
+- View delivery history: [`GET /webhook-logs`](/api-reference/webhook-logs)
+- Retry failed deliveries manually via the API or dashboard
+
+## Security
+
+Validate webhook authenticity by checking the request origin and implementing signature verification on your endpoint.
+
+<Tip>
+  Always return a `200` status quickly from your webhook endpoint. Do heavy processing asynchronously to avoid timeouts.
+</Tip>

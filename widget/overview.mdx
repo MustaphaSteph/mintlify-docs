@@ -1,0 +1,47 @@
+---
+title: Widget Overview
+description: Embed an AI chat widget on any website
+---
+
+The BGAI chat widget is a drop-in JavaScript component that adds an AI-powered chat interface to any website. It connects to your chatbot and handles sessions, streaming, handoff, and visitor tracking out of the box.
+
+## Features
+
+- Real-time streaming responses
+- Light and dark themes
+- Fully customizable colors, fonts, and positioning
+- Visitor session persistence (conversations resume across pages)
+- Human handoff support
+- Message reactions (thumbs up/down)
+- UTM parameter tracking
+- HMAC visitor identity verification
+- Responsive design (desktop and mobile)
+- Shadow DOM isolation (no CSS conflicts)
+
+## Quick start
+
+```html
+<script src="https://api.answira.com/static/premium-widget-v4.js"></script>
+<script>
+  BGAIPremiumWidget.init({
+    chatbotId: 'YOUR_CHATBOT_ID',
+    apiUrl: 'https://api.answira.com'
+  });
+</script>
+```
+
+That's it — a chat button appears in the bottom-right corner of your page.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/widget/installation">
+    Detailed setup instructions for different frameworks.
+  </Card>
+  <Card title="Customization" icon="palette" href="/widget/customization">
+    Colors, fonts, position, greeting, and advanced styling.
+  </Card>
+  <Card title="Events" icon="bolt" href="/widget/events">
+    Listen to widget events and build custom integrations.
+  </Card>
+</CardGroup>

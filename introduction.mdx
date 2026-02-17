@@ -1,0 +1,58 @@
+---
+title: Introduction
+description: Build AI-powered customer support agents with BGAI
+---
+
+# Welcome to BGAI
+
+BGAI (Answira AI) is an enterprise-ready AI chatbot platform that lets you create intelligent support agents, train them on your data, and embed them anywhere with a single script tag.
+
+## What you can build
+
+<CardGroup cols={2}>
+  <Card title="AI Support Agents" icon="robot">
+    Create chatbots trained on your docs, FAQs, and knowledge base. They answer customer questions 24/7 with context-aware responses.
+  </Card>
+  <Card title="Human Handoff" icon="headset">
+    Automatically detect when a customer needs a real person and route the conversation to the right agent based on skills and availability.
+  </Card>
+  <Card title="Custom Bots" icon="wand-magic-sparkles">
+    Build domain-specific bots for any use case — legal docs, medical records, code repos, product catalogs, and more.
+  </Card>
+  <Card title="Embeddable Widget" icon="message-bot">
+    Drop a chat widget on any website with full customization — colors, fonts, position, greeting messages, and dark mode.
+  </Card>
+</CardGroup>
+
+## Key features
+
+- **Vector search** — Semantic retrieval from your training data using embeddings
+- **Streaming responses** — Real-time SSE streaming for instant token-by-token output
+- **Multi-model** — Choose from OpenAI, Anthropic Claude, Google Gemini, and more
+- **Team management** — Invite agents, assign skills, route conversations intelligently
+- **Analytics** — Track conversations, response quality, handoff rates, and agent performance
+- **Webhooks** — Get notified on conversations, handoffs, leads, and training events
+- **API-first** — Full REST API with scoped API keys for programmatic access
+
+## Architecture overview
+
+```
+Your Website → Chat Widget → BGAI API → AI Model (OpenAI/Claude/Gemini)
+                                ↓
+                        Vector Search (Qdrant)
+                                ↓
+                        Knowledge Base (PostgreSQL)
+                                ↓
+                        Agent Dashboard (React)
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Create your first chatbot and embed it in 5 minutes.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore the full REST API with examples.
+  </Card>
+</CardGroup>

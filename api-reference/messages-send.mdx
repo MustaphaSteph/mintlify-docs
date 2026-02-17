@@ -1,0 +1,45 @@
+---
+title: Send Message
+api: POST /v1/messages
+description: Send a message and receive a non-streaming AI response
+---
+
+## Request
+
+<ParamField body="session_id" type="string" required>
+  The session ID from [Start Session](/api-reference/sessions-create).
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  The user's message text.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional unique key to prevent duplicate messages.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "ses_1234567890",
+    "message": "What are your pricing plans?"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "id": "msg_abc123",
+  "role": "assistant",
+  "content": "Our pricing starts at $29/month for the Starter plan, which includes 1,000 messages.",
+  "timestamp": "2025-01-15T10:31:00Z",
+  "confidence_score": 0.92,
+  "sources_used": 2,
+  "processing_time_ms": 1250,
+  "requires_human_handoff": false
+}
+```
+</ResponseExample>

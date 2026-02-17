@@ -1,0 +1,33 @@
+---
+title: List Chatbots
+api: GET /v1/chatbots
+description: List all chatbots for the authenticated user
+---
+
+Requires `chatbots:read` scope.
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/chatbots \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "chatbots": [
+    {
+      "id": "bot_abc123",
+      "name": "Support Bot",
+      "description": "Customer support agent",
+      "bot_type": "custom",
+      "ai_model": "anthropic/claude-sonnet-4-5",
+      "is_active": true,
+      "created_at": "2025-01-10T08:00:00Z"
+    }
+  ],
+  "total": 1
+}
+```
+</ResponseExample>

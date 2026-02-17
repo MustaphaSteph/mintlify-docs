@@ -1,0 +1,21 @@
+---
+title: Ping
+api: GET /v1/ping
+description: Health check and auth verification
+---
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/ping \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "status": "ok",
+  "user_id": "usr_1234567890abcdef"
+}
+```
+</ResponseExample>

@@ -1,0 +1,26 @@
+---
+title: Get Session State
+api: GET /v1/sessions/{session_id}/state
+description: Check if session is handled by AI or a human agent
+---
+
+<ParamField path="session_id" type="string" required>
+  The session ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/sessions/ses_1234567890/state
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "handler_type": "ai",
+  "conversation_status": "active",
+  "agent_id": null,
+  "agent_name": null
+}
+```
+</ResponseExample>

@@ -1,0 +1,26 @@
+---
+title: Delete Data Source
+api: DELETE /v1/data-sources/{source_id}
+description: Delete a data source and its vector embeddings
+---
+
+Requires `training:write` scope.
+
+<ParamField path="source_id" type="string" required>
+  The data source ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://api.answira.com/v1/data-sources/ds_001 \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "status": "deleted"
+}
+```
+</ResponseExample>

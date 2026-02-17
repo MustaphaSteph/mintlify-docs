@@ -1,0 +1,57 @@
+---
+title: Create Webhook
+api: POST /v1/chatbots/{chatbot_id}/webhooks
+description: Subscribe to chatbot events
+---
+
+Requires `webhooks:write` scope. Max 10 webhooks per chatbot.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL to receive webhook events.
+</ParamField>
+
+<ParamField body="events" type="string[]" required>
+  List of event types to subscribe to.
+</ParamField>
+
+### Available events
+
+| Event | Triggered when |
+|-------|---------------|
+| `conversation.started` | A new conversation begins |
+| `conversation.ended` | A conversation is closed |
+| `message.received` | A new message is sent |
+| `handoff.triggered` | AI transfers to human |
+| `handoff.resolved` | Human agent resolves handoff |
+| `lead.captured` | A lead form is submitted |
+| `training.started` | Training data processing begins |
+| `training.completed` | Training finishes successfully |
+| `training.failed` | Training fails |
+| `*` | All events |
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/webhooks \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/bgai",
+    "events": ["conversation.started", "handoff.triggered", "lead.captured"]
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201
+{
+  "id": "wh_abc123",
+  "url": "https://api.yourapp.com/webhooks/bgai",
+  "events": ["conversation.started", "handoff.triggered", "lead.captured"],
+  "created_at": "2025-01-15T10:00:00Z"
+}
+```
+</ResponseExample>

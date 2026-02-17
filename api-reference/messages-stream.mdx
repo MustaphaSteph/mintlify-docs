@@ -1,0 +1,122 @@
+---
+title: Stream Response
+api: POST /v1/messages/stream
+description: Send a message and receive a streaming AI response via SSE
+---
+
+Returns a `text/event-stream` response. The AI response is streamed token-by-token for real-time display.
+
+## Request
+
+<ParamField body="session_id" type="string" required>
+  The session ID from [Start Session](/api-reference/sessions-create).
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  The user's message text.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional unique key to prevent duplicate messages.
+</ParamField>
+
+## SSE Event Types
+
+| Event | Description |
+|-------|-------------|
+| `message-start` | Stream begins, includes `messageId` |
+| `text-start` | Text chunk sequence begins |
+| `text-delta` | A token of response text |
+| `text-end` | Text chunk sequence ends |
+| `reasoning-start` | Thinking/reasoning begins (if model supports it) |
+| `reasoning-delta` | A token of reasoning text |
+| `reasoning-end` | Reasoning ends |
+| `finish` | Stream complete, includes `usage` stats |
+| `error` | An error occurred |
+| `[DONE]` | Stream terminated |
+
+## Example
+
+<RequestExample>
+```bash cURL
+curl -N -X POST https://api.answira.com/v1/messages/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "ses_1234567890",
+    "message": "What are your pricing plans?"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.answira.com/v1/messages/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    session_id: "ses_1234567890",
+    message: "What are your pricing plans?",
+  }),
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  const chunk = decoder.decode(value);
+  const lines = chunk.split("\n");
+
+  for (const line of lines) {
+    if (!line.startsWith("data: ")) continue;
+    const data = line.slice(6);
+    if (data === "[DONE]") break;
+
+    const event = JSON.parse(data);
+    if (event.type === "text-delta") {
+      process.stdout.write(event.delta);
+    }
+  }
+}
+```
+
+```python Python
+import requests
+import json
+
+response = requests.post(
+    "https://api.answira.com/v1/messages/stream",
+    json={"session_id": "ses_1234567890", "message": "What are your pricing plans?"},
+    stream=True,
+)
+
+for line in response.iter_lines():
+    if not line:
+        continue
+    line = line.decode("utf-8")
+    if not line.startswith("data: "):
+        continue
+    data = line[6:]
+    if data == "[DONE]":
+        break
+
+    event = json.loads(data)
+    if event["type"] == "text-delta":
+        print(event["delta"], end="", flush=True)
+```
+</RequestExample>
+
+<ResponseExample>
+```text SSE Stream
+data: {"type":"message-start","messageId":"msg_abc123"}
+data: {"type":"text-start","id":"t1"}
+data: {"type":"text-delta","id":"t1","delta":"Our"}
+data: {"type":"text-delta","id":"t1","delta":" pricing"}
+data: {"type":"text-delta","id":"t1","delta":" starts"}
+data: {"type":"text-delta","id":"t1","delta":" at"}
+data: {"type":"text-delta","id":"t1","delta":" $29/month"}
+data: {"type":"text-end","id":"t1"}
+data: {"type":"finish","usage":{"input":150,"output":42}}
+data: [DONE]
+```
+</ResponseExample>

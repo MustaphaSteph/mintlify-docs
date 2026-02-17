@@ -1,0 +1,85 @@
+---
+title: Create Chatbot
+api: POST /v1/chatbots
+description: Create a new AI chatbot
+---
+
+Requires `chatbots:write` scope. Rate limit: 20/minute.
+
+## Request
+
+<ParamField body="name" type="string" required>
+  Display name for the chatbot.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Brief description of the chatbot's purpose.
+</ParamField>
+
+<ParamField body="system_prompt" type="string">
+  Custom system instructions for the AI.
+</ParamField>
+
+<ParamField body="ai_model" type="string" default="openai/gpt-4o-mini">
+  AI model in `provider/model` format. Examples: `anthropic/claude-sonnet-4-5`, `openai/gpt-4o`, `google-gla/gemini-2.0-flash`.
+</ParamField>
+
+<ParamField body="bot_type" type="string" default="support">
+  `support` for customer service or `custom` for flexible domain-specific bots.
+</ParamField>
+
+<ParamField body="temperature" type="number" default="0.7">
+  Creativity level from `0.0` (deterministic) to `1.0` (creative).
+</ParamField>
+
+<ParamField body="max_tokens" type="integer" default="500">
+  Maximum response length. Range: 50–4000.
+</ParamField>
+
+<ParamField body="allow_handoff" type="boolean" default="true">
+  Whether the bot can transfer to human agents.
+</ParamField>
+
+<ParamField body="search_threshold" type="number" default="0.5">
+  Similarity threshold for knowledge base search. Range: 0.0–1.0.
+</ParamField>
+
+<ParamField body="industry" type="string">
+  Business industry (e.g., "saas", "ecommerce", "healthcare").
+</ParamField>
+
+<ParamField body="tone" type="string">
+  Response tone (e.g., "professional", "friendly", "casual").
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/chatbots \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Docs Assistant",
+    "description": "Answers questions about our documentation",
+    "system_prompt": "You are a helpful documentation assistant. Answer based on the knowledge base provided. Be concise and accurate.",
+    "ai_model": "anthropic/claude-sonnet-4-5",
+    "bot_type": "custom",
+    "temperature": 0.5,
+    "max_tokens": 800,
+    "search_threshold": 0.45
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 201
+{
+  "id": "bot_xyz789",
+  "name": "Docs Assistant",
+  "description": "Answers questions about our documentation",
+  "bot_type": "custom",
+  "ai_model": "anthropic/claude-sonnet-4-5",
+  "is_active": true,
+  "created_at": "2025-01-15T10:00:00Z"
+}
+```
+</ResponseExample>

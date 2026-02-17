@@ -1,0 +1,86 @@
+---
+title: Visitor Identity
+description: Verify visitor identity with HMAC signatures
+---
+
+When embedding the chat widget on authenticated pages, you can pass verified visitor information so the chatbot knows who it's talking to — preventing impersonation.
+
+## How it works
+
+1. Your **server** generates an HMAC-SHA256 signature using the visitor's email and your API key
+2. The signature is passed to the widget on the **client**
+3. BGAI verifies the signature before accepting the identity
+
+## Server-side signature
+
+<CodeGroup>
+```javascript Node.js
+const crypto = require('crypto');
+
+function generateIdentitySignature(email, apiKey) {
+  return crypto
+    .createHmac('sha256', apiKey)
+    .update(email)
+    .digest('hex');
+}
+
+// Generate for the current user
+const signature = generateIdentitySignature('john@acme.com', 'ak_live_YOUR_KEY');
+```
+
+```python Python
+import hmac
+import hashlib
+
+def generate_identity_signature(email: str, api_key: str) -> str:
+    return hmac.new(
+        api_key.encode(),
+        email.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+signature = generate_identity_signature("john@acme.com", "ak_live_YOUR_KEY")
+```
+
+```php PHP
+$signature = hash_hmac('sha256', 'john@acme.com', 'ak_live_YOUR_KEY');
+```
+</CodeGroup>
+
+## Client-side usage
+
+### Widget
+
+```html
+<script>
+  BGAIPremiumWidget.init({
+    chatbotId: 'YOUR_CHATBOT_ID',
+    apiUrl: 'https://api.answira.com',
+    // Pass verified identity
+    visitorEmail: 'john@acme.com',
+    visitorName: 'John Doe',
+    identitySignature: '{{ server_generated_signature }}',
+  });
+</script>
+```
+
+### API
+
+```bash
+curl -X POST https://api.answira.com/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "bot_abc123",
+    "visitor_email": "john@acme.com",
+    "visitor_name": "John Doe",
+    "identity_signature": "a1b2c3d4e5f6..."
+  }'
+```
+
+## Session continuity
+
+When a verified visitor returns, BGAI automatically resumes their previous conversation — they see their full chat history without starting over.
+
+<Warning>
+  Never expose your API key in client-side code. Generate the HMAC signature on your server and pass only the signature to the client.
+</Warning>

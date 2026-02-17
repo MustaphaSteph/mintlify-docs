@@ -1,0 +1,51 @@
+---
+title: List Messages
+api: GET /v1/sessions/{session_id}/messages
+description: Fetch all messages in a session
+---
+
+<ParamField path="session_id" type="string" required>
+  The session ID.
+</ParamField>
+
+<ParamField query="since" type="string">
+  ISO 8601 timestamp. Only return messages after this time.
+</ParamField>
+
+<ParamField query="limit" type="integer" default="50">
+  Maximum number of messages to return.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl "https://api.answira.com/v1/sessions/ses_1234567890/messages?limit=20"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "messages": [
+    {
+      "id": "msg_001",
+      "role": "assistant",
+      "content": "Hi! How can I help you today?",
+      "timestamp": "2025-01-15T10:30:00Z"
+    },
+    {
+      "id": "msg_002",
+      "role": "user",
+      "content": "What are your pricing plans?",
+      "timestamp": "2025-01-15T10:30:15Z"
+    },
+    {
+      "id": "msg_003",
+      "role": "assistant",
+      "content": "Our pricing starts at $29/month.",
+      "timestamp": "2025-01-15T10:30:17Z",
+      "confidence_score": 0.92
+    }
+  ]
+}
+```
+</ResponseExample>

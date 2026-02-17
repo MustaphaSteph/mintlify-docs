@@ -1,0 +1,29 @@
+---
+title: Get Usage
+api: GET /v1/usage
+description: Get current plan usage and limits
+---
+
+Requires `analytics:read` scope.
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/usage \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "plan_id": "plan_starter_001",
+  "plan_name": "Starter",
+  "period_start": "2025-01-01T00:00:00Z",
+  "period_end": "2025-01-31T23:59:59Z",
+  "messages": { "used": 120, "limit": 1000, "remaining": 880 },
+  "chatbots": { "used": 2, "limit": 3, "remaining": 1 },
+  "team_members": { "used": 3, "limit": 5, "remaining": 2 },
+  "teams": { "used": 1, "limit": 2, "remaining": 1 }
+}
+```
+</ResponseExample>

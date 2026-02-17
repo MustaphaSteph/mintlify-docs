@@ -1,0 +1,89 @@
+---
+title: API Reference
+description: Complete REST API for BGAI
+---
+
+## Base URL
+
+```
+https://api.answira.com/v1
+```
+
+## Authentication
+
+Most endpoints require an API key in the `X-API-Key` header. See [Authentication](/authentication) for details.
+
+## Endpoints
+
+### Sessions & Chat
+
+The core chat flow: create a session, send messages, get responses.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | [`/sessions`](/api-reference/sessions-create) | Start a new chat session |
+| `GET` | [`/sessions/{id}`](/api-reference/sessions-get) | Get session details |
+| `POST` | [`/messages`](/api-reference/messages-send) | Send a message |
+| `POST` | [`/messages/stream`](/api-reference/messages-stream) | Send message & stream response (SSE) |
+| `GET` | [`/sessions/{id}/messages`](/api-reference/messages-list) | List messages in a session |
+| `GET` | [`/sessions/{id}/state`](/api-reference/sessions-state) | Check AI vs human handler |
+| `POST` | [`/sessions/{id}/handoff`](/api-reference/sessions-handoff) | Request human handoff |
+| `POST` | [`/messages/reactions`](/api-reference/messages-reaction) | Add reaction to a message |
+| `POST` | [`/sessions/{id}/end`](/api-reference/sessions-end) | End a session |
+
+### Chatbots
+
+Manage your AI chatbots programmatically.
+
+| Method | Endpoint | Description | Scope |
+|--------|----------|-------------|-------|
+| `GET` | [`/chatbots`](/api-reference/chatbots-list) | List all chatbots | `chatbots:read` |
+| `POST` | [`/chatbots`](/api-reference/chatbots-create) | Create a chatbot | `chatbots:write` |
+| `GET` | [`/chatbots/{id}`](/api-reference/chatbots-get) | Get chatbot details | `chatbots:read` |
+| `PUT` | [`/chatbots/{id}`](/api-reference/chatbots-update) | Update a chatbot | `chatbots:write` |
+| `DELETE` | [`/chatbots/{id}`](/api-reference/chatbots-delete) | Delete a chatbot | `chatbots:write` |
+
+### Training Data
+
+Upload knowledge base content to train your chatbot.
+
+| Method | Endpoint | Description | Scope |
+|--------|----------|-------------|-------|
+| `POST` | [`/chatbots/{id}/training/text`](/api-reference/training-text) | Train from text | `training:write` |
+| `POST` | [`/chatbots/{id}/training/urls`](/api-reference/training-urls) | Train from URLs | `training:write` |
+| `POST` | [`/chatbots/{id}/training/files`](/api-reference/training-files) | Train from files (base64) | `training:write` |
+| `GET` | [`/chatbots/{id}/training/status`](/api-reference/training-status) | Check training status | `training:read` |
+| `GET` | [`/chatbots/{id}/data-sources`](/api-reference/data-sources-list) | List data sources | `training:read` |
+| `DELETE` | [`/data-sources/{id}`](/api-reference/data-sources-delete) | Delete a data source | `training:write` |
+
+### Webhooks
+
+Subscribe to events and get notified in real-time.
+
+| Method | Endpoint | Description | Scope |
+|--------|----------|-------------|-------|
+| `POST` | [`/chatbots/{id}/webhooks`](/api-reference/webhooks-create) | Create a webhook | `webhooks:write` |
+| `GET` | [`/chatbots/{id}/webhooks`](/api-reference/webhooks-list) | List webhooks | `webhooks:read` |
+| `DELETE` | [`/chatbots/{id}/webhooks/{wid}`](/api-reference/webhooks-delete) | Delete a webhook | `webhooks:write` |
+| `GET` | [`/chatbots/{id}/webhook-logs`](/api-reference/webhook-logs) | View delivery logs | `webhooks:read` |
+
+### Usage & Auth
+
+| Method | Endpoint | Description | Scope |
+|--------|----------|-------------|-------|
+| `GET` | [`/usage`](/api-reference/usage) | Get usage & plan info | `analytics:read` |
+| `POST` | [`/auth/api-key/exchange`](/api-reference/auth-exchange) | Exchange API key for JWT | — |
+| `GET` | [`/ping`](/api-reference/ping) | Health check | — |
+
+## Idempotency
+
+For `POST` requests, you can include an `Idempotency-Key` header to prevent duplicate operations:
+
+```bash
+curl -X POST https://api.answira.com/v1/messages \
+  -H "Idempotency-Key: unique-request-id-123" \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "...", "message": "hello"}'
+```
+
+If the same key is sent again within 24 hours, the original response is returned.

@@ -1,122 +1,142 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
-  "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+  "name": "BGAI",
+  "logo": {
+    "light": "/images/logo-light.svg",
+    "dark": "/images/logo-dark.svg"
   },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Guides",
-        "groups": [
-          {
-            "group": "Getting started",
-            "pages": [
-              "index",
-              "quickstart",
-              "development"
-            ]
-          },
-          {
-            "group": "Customization",
-            "pages": [
-              "essentials/settings",
-              "essentials/navigation"
-            ]
-          },
-          {
-            "group": "Writing content",
-            "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API reference",
-        "groups": [
-          {
-            "group": "API documentation",
-            "pages": [
-              "api-reference/introduction"
-            ]
-          },
-          {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
-          }
-        ]
-      }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
+  "favicon": "/images/favicon.svg",
+  "colors": {
+    "primary": "#3d8b7a",
+    "light": "#5bb5a2",
+    "dark": "#2d6b5e",
+    "background": {
+      "dark": "#18172b"
+    }
+  },
+  "theme": "quill",
+  "topbarLinks": [
+    {
+      "name": "Dashboard",
+      "url": "https://app.answira.com"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get Started",
+    "url": "https://app.answira.com/register"
+  },
+  "anchors": [
+    {
+      "name": "API Reference",
+      "icon": "code",
+      "url": "/api-reference"
+    },
+    {
+      "name": "Widget",
+      "icon": "message-bot",
+      "url": "/widget"
+    },
+    {
+      "name": "GitHub",
+      "icon": "github",
+      "url": "https://github.com/MustaphaSteph/bgai"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": [
+        "introduction",
+        "quickstart",
+        "authentication"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/training-data",
+        "guides/streaming",
+        "guides/human-handoff",
+        "guides/webhooks",
+        "guides/visitor-identity"
+      ]
+    },
+    {
+      "group": "Widget",
+      "pages": [
+        "widget/overview",
+        "widget/installation",
+        "widget/customization",
+        "widget/events"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api-reference/overview"
+      ]
+    },
+    {
+      "group": "Sessions & Chat",
+      "pages": [
+        "api-reference/sessions-create",
+        "api-reference/sessions-get",
+        "api-reference/messages-send",
+        "api-reference/messages-stream",
+        "api-reference/messages-list",
+        "api-reference/sessions-state",
+        "api-reference/sessions-handoff",
+        "api-reference/messages-reaction",
+        "api-reference/sessions-end"
+      ]
+    },
+    {
+      "group": "Chatbots",
+      "pages": [
+        "api-reference/chatbots-list",
+        "api-reference/chatbots-create",
+        "api-reference/chatbots-get",
+        "api-reference/chatbots-update",
+        "api-reference/chatbots-delete"
+      ]
+    },
+    {
+      "group": "Training Data",
+      "pages": [
+        "api-reference/training-text",
+        "api-reference/training-urls",
+        "api-reference/training-files",
+        "api-reference/training-status",
+        "api-reference/data-sources-list",
+        "api-reference/data-sources-delete"
+      ]
+    },
+    {
+      "group": "Webhooks",
+      "pages": [
+        "api-reference/webhooks-create",
+        "api-reference/webhooks-list",
+        "api-reference/webhooks-delete",
+        "api-reference/webhook-logs"
+      ]
+    },
+    {
+      "group": "Usage & Auth",
+      "pages": [
+        "api-reference/usage",
+        "api-reference/auth-exchange",
+        "api-reference/ping"
       ]
     }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+  ],
+  "api": {
+    "baseUrl": "https://api.answira.com",
+    "auth": {
+      "method": "key",
+      "name": "X-API-Key"
     }
   },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+  "feedback": {
+    "thumbsRating": true
   }
 }

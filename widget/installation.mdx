@@ -1,0 +1,116 @@
+---
+title: Installation
+description: Add the chat widget to your website
+---
+
+## HTML / Static sites
+
+Add this before `</body>`:
+
+```html
+<script src="https://api.answira.com/static/premium-widget-v4.js"></script>
+<script>
+  BGAIPremiumWidget.init({
+    chatbotId: 'YOUR_CHATBOT_ID',
+    apiUrl: 'https://api.answira.com',
+    primaryColor: '#3d8b7a',
+    widgetTitle: 'Support',
+    greeting: 'Hi! How can I help?',
+    position: 'bottom-right'
+  });
+</script>
+```
+
+## React / Next.js
+
+```tsx
+// components/ChatWidget.tsx
+'use client';
+import { useEffect } from 'react';
+
+declare global {
+  interface Window {
+    BGAIPremiumWidget?: {
+      init: (config: Record<string, unknown>) => void;
+      destroy: () => void;
+    };
+  }
+}
+
+export function ChatWidget({ chatbotId }: { chatbotId: string }) {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://api.answira.com/static/premium-widget-v4.js';
+    script.onload = () => {
+      window.BGAIPremiumWidget?.init({
+        chatbotId,
+        apiUrl: 'https://api.answira.com',
+      });
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      window.BGAIPremiumWidget?.destroy();
+      script.remove();
+    };
+  }, [chatbotId]);
+
+  return null;
+}
+```
+
+```tsx
+// app/layout.tsx
+import { ChatWidget } from '@/components/ChatWidget';
+
+export default function Layout({ children }) {
+  return (
+    <html>
+      <body>
+        {children}
+        <ChatWidget chatbotId="YOUR_CHATBOT_ID" />
+      </body>
+    </html>
+  );
+}
+```
+
+## Vue.js
+
+```vue
+<script setup>
+import { onMounted, onUnmounted } from 'vue'
+
+onMounted(() => {
+  const script = document.createElement('script')
+  script.src = 'https://api.answira.com/static/premium-widget-v4.js'
+  script.onload = () => {
+    window.BGAIPremiumWidget?.init({
+      chatbotId: 'YOUR_CHATBOT_ID',
+      apiUrl: 'https://api.answira.com',
+    })
+  }
+  document.body.appendChild(script)
+})
+
+onUnmounted(() => {
+  window.BGAIPremiumWidget?.destroy()
+})
+</script>
+```
+
+## WordPress
+
+Add to **Appearance → Theme Editor → footer.php**, before `</body>`:
+
+```html
+<script src="https://api.answira.com/static/premium-widget-v4.js"></script>
+<script>
+  BGAIPremiumWidget.init({
+    chatbotId: 'YOUR_CHATBOT_ID',
+    apiUrl: 'https://api.answira.com'
+  });
+</script>
+```
+
+Or use a plugin like **Insert Headers and Footers** to add the snippet without editing theme files.

@@ -1,0 +1,48 @@
+---
+title: Webhook Logs
+api: GET /v1/chatbots/{chatbot_id}/webhook-logs
+description: View webhook delivery history and retry failed deliveries
+---
+
+Requires `webhooks:read` scope.
+
+<ParamField path="chatbot_id" type="string" required>The chatbot ID.</ParamField>
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/chatbots/bot_abc123/webhook-logs \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "logs": [
+    {
+      "id": "log_001",
+      "webhook_id": "wh_abc123",
+      "event": "conversation.started",
+      "status": "delivered",
+      "response_code": 200,
+      "delivered_at": "2025-01-15T10:30:01Z"
+    },
+    {
+      "id": "log_002",
+      "webhook_id": "wh_abc123",
+      "event": "handoff.triggered",
+      "status": "failed",
+      "response_code": 500,
+      "delivered_at": "2025-01-15T10:35:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>
+
+### Retry a failed delivery
+
+```bash
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/webhook-logs/log_002/retry \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```

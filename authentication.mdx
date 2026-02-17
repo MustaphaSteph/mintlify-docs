@@ -1,0 +1,139 @@
+---
+title: Authentication
+description: API keys, scopes, and security
+---
+
+## API key authentication
+
+All API requests require an API key passed in the `X-API-Key` header:
+
+```bash
+curl https://api.answira.com/v1/chatbots \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+### Creating API keys
+
+1. Go to **Settings → API Keys** in the dashboard
+2. Click **Create API Key**
+3. Select the scopes your integration needs
+4. Copy the key — it's only shown once
+
+### Scopes
+
+API keys use granular scopes to limit access:
+
+| Scope | Description |
+|-------|-------------|
+| `chatbots:read` | List and view chatbot details |
+| `chatbots:write` | Create, update, delete chatbots |
+| `training:read` | Check training status, list data sources |
+| `training:write` | Upload training data (text, URLs, files) |
+| `analytics:read` | View usage stats and analytics |
+| `webhooks:read` | View webhook subscriptions and logs |
+| `webhooks:write` | Create, delete, and retry webhooks |
+
+### Key format
+
+```
+ak_live_abc123def456ghi789...
+```
+
+- Prefix `ak_live_` for production keys
+- Prefix `ak_test_` for test/sandbox keys
+
+## Public endpoints
+
+Some endpoints don't require an API key — they're designed for use from the browser widget:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /v1/sessions` | Start a chat session |
+| `POST /v1/messages` | Send a message |
+| `POST /v1/messages/stream` | Stream a response |
+| `GET /v1/sessions/{id}/messages` | Fetch message history |
+| `POST /v1/visitors/identify` | Identify a visitor |
+| `GET /v1/chatbots/{id}/config` | Get widget config |
+
+<Warning>
+  Public endpoints are rate-limited per IP. Use API keys for server-to-server integrations.
+</Warning>
+
+## JWT token exchange
+
+For advanced integrations, you can exchange an API key for a short-lived JWT token:
+
+```bash
+curl -X POST https://api.answira.com/v1/auth/api-key/exchange \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+```json Response
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer",
+  "expires_in": 1200,
+  "user_id": "usr_1234567890abcdef",
+  "scopes": ["chatbots:read", "chatbots:write"]
+}
+```
+
+The JWT expires after 20 minutes. Use it in the `Authorization` header:
+
+```bash
+curl https://api.answira.com/v1/chatbots \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIs..."
+```
+
+## Visitor identity verification (HMAC)
+
+For the embedded widget, you can verify visitor identity using HMAC signatures to prevent impersonation:
+
+```javascript
+// Server-side: generate signature
+const crypto = require('crypto');
+const signature = crypto
+  .createHmac('sha256', 'YOUR_API_KEY')
+  .update(visitorEmail)
+  .digest('hex');
+
+// Client-side: pass to widget
+BGAIPremiumWidget.init({
+  chatbotId: 'YOUR_CHATBOT_ID',
+  visitorEmail: 'user@example.com',
+  identitySignature: signature,
+});
+```
+
+## Rate limits
+
+| Endpoint | Limit |
+|----------|-------|
+| `POST /v1/sessions` | 30/minute |
+| `POST /v1/messages` | 60/minute |
+| `POST /v1/messages/stream` | 60/minute |
+| `POST /v1/chatbots` | 20/minute |
+| `POST /v1/training/*` | 10/minute |
+| `GET /v1/sessions/*/messages` | 120/minute |
+| `GET /v1/chatbots/*` | 120/minute |
+
+When rate limited, the API returns `429 Too Many Requests` with a `Retry-After` header.
+
+## Error responses
+
+All errors follow a consistent format:
+
+```json
+{
+  "detail": "Chatbot not found or inactive"
+}
+```
+
+| Status | Meaning |
+|--------|---------|
+| `400` | Bad request / validation error |
+| `403` | Invalid API key or insufficient scope |
+| `404` | Resource not found |
+| `409` | Conflict (duplicate idempotency key) |
+| `429` | Rate limited |
+| `500` | Internal server error |

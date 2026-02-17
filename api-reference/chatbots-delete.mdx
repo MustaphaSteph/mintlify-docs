@@ -1,0 +1,30 @@
+---
+title: Delete Chatbot
+api: DELETE /v1/chatbots/{chatbot_id}
+description: Permanently delete a chatbot and all its data
+---
+
+Requires `chatbots:write` scope.
+
+<Warning>
+  This permanently deletes the chatbot, its knowledge base, conversation history, widget settings, and analytics. This action cannot be undone.
+</Warning>
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X DELETE https://api.answira.com/v1/chatbots/bot_abc123 \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "status": "deleted"
+}
+```
+</ResponseExample>

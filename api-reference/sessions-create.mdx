@@ -1,0 +1,77 @@
+---
+title: Start Session
+api: POST /v1/sessions
+description: Create a new chat session for a visitor
+---
+
+## Request
+
+<ParamField body="chatbot_id" type="string" required>
+  The chatbot ID to start a session with.
+</ParamField>
+
+<ParamField body="visitor_id" type="string">
+  Optional persistent visitor ID for session continuity.
+</ParamField>
+
+<ParamField body="visitor_name" type="string">
+  Optional visitor display name.
+</ParamField>
+
+<ParamField body="visitor_email" type="string">
+  Optional visitor email for identification.
+</ParamField>
+
+<ParamField body="page_url" type="string">
+  The URL of the page where the chat was started.
+</ParamField>
+
+<ParamField body="customer_metadata" type="object">
+  Custom key-value metadata to attach to the session.
+</ParamField>
+
+<ParamField body="identity_signature" type="string">
+  HMAC-SHA256 signature for verified visitor identity. See [Visitor Identity](/guides/visitor-identity).
+</ParamField>
+
+## Response
+
+<ResponseField name="session_id" type="string">
+  The unique session identifier.
+</ResponseField>
+
+<ResponseField name="conversation_id" type="string">
+  The conversation ID for this session.
+</ResponseField>
+
+<ResponseField name="chatbot_id" type="string">
+  The chatbot ID.
+</ResponseField>
+
+<ResponseField name="greeting" type="string">
+  The chatbot's greeting message.
+</ResponseField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "bot_abc123",
+    "visitor_name": "John",
+    "visitor_email": "john@example.com",
+    "page_url": "https://acme.com/pricing"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "session_id": "ses_1234567890",
+  "conversation_id": "conv_abcdef",
+  "chatbot_id": "bot_abc123",
+  "greeting": "Hi! How can I help you today?"
+}
+```
+</ResponseExample>

@@ -1,0 +1,78 @@
+---
+title: Training Data
+description: How to build your chatbot's knowledge base
+---
+
+Your chatbot answers questions using a knowledge base built from your training data. The better your training data, the better the responses.
+
+## Data sources
+
+| Source | Best for | Endpoint |
+|--------|----------|----------|
+| **Text** | FAQs, Q&A pairs, short content | [`POST /training/text`](/api-reference/training-text) |
+| **URLs** | Documentation, blog posts, help articles | [`POST /training/urls`](/api-reference/training-urls) |
+| **Files** | PDFs, CSVs, JSON, TXT documents | [`POST /training/files`](/api-reference/training-files) |
+
+## Chunking strategies
+
+When you upload content, it gets split into **chunks** — small searchable segments that the AI retrieves when answering questions.
+
+| Strategy | Description | Best for |
+|----------|-------------|----------|
+| `auto` | AI picks the best strategy | Most use cases (recommended) |
+| `individual` | One chunk per item/row | FAQs, CSV rows, structured data |
+| `semantic_groups` | Groups related content | Long documents, manuals |
+
+```bash
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc/training/text \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Product FAQ",
+    "content": "Q: What is BGAI?\nA: An AI chatbot platform.\n\nQ: How much does it cost?\nA: Plans start at $29/month.",
+    "chunking_strategy": "individual"
+  }'
+```
+
+## Processing pipeline
+
+Training is **asynchronous**. After uploading:
+
+1. Content is queued for processing
+2. Text is extracted and cleaned
+3. Content is split into chunks using your chosen strategy
+4. Each chunk is embedded as a vector
+5. Vectors are stored in the knowledge base
+
+Poll the [training status endpoint](/api-reference/training-status) to check progress:
+
+```bash
+curl https://api.answira.com/v1/chatbots/bot_abc/training/status \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+## Tips for good training data
+
+<AccordionGroup>
+  <Accordion title="Structure your FAQs clearly">
+    Use `Q:` and `A:` prefixes, or CSV format with `question` and `answer` columns. The `individual` chunking strategy works best.
+  </Accordion>
+  <Accordion title="Keep content focused">
+    Each training source should cover one topic. Multiple focused sources > one giant document.
+  </Accordion>
+  <Accordion title="Include variations">
+    People ask the same question in different ways. Include common phrasings in your training data.
+  </Accordion>
+  <Accordion title="Update regularly">
+    Delete outdated sources and upload fresh content. Stale data leads to wrong answers.
+  </Accordion>
+</AccordionGroup>
+
+## Limits
+
+| Metric | Limit |
+|--------|-------|
+| Files per request | 20 |
+| File size (each) | 50 MB |
+| Supported formats | CSV, PDF, TXT, JSON |
+| Storage | Per plan (check [Usage](/api-reference/usage)) |

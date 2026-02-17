@@ -1,0 +1,41 @@
+---
+title: List Data Sources
+api: GET /v1/chatbots/{chatbot_id}/data-sources
+description: List all training data sources for a chatbot
+---
+
+Requires `training:read` scope.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<ParamField query="cursor" type="string">
+  Pagination cursor from a previous response.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/chatbots/bot_abc123/data-sources \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "data_sources": [
+    {
+      "id": "ds_001",
+      "filename": "faq.csv",
+      "source_type": "File",
+      "file_size": 24576,
+      "processing_status": "completed",
+      "chunks_created": 45,
+      "upload_date": "2025-01-10T08:00:00Z"
+    }
+  ],
+  "next_cursor": null
+}
+```
+</ResponseExample>

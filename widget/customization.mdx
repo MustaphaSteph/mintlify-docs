@@ -1,0 +1,101 @@
+---
+title: Customization
+description: Style the widget to match your brand
+---
+
+## Configuration options
+
+Pass these options to `BGAIPremiumWidget.init()`:
+
+### Basic
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `chatbotId` | string | — | **Required.** Your chatbot ID |
+| `apiUrl` | string | — | **Required.** API base URL |
+| `widgetTitle` | string | `"Chat with us"` | Header title text |
+| `greeting` | string | `"Hello! How can I help?"` | Initial greeting message |
+| `placeholder` | string | `"Type your message..."` | Input placeholder text |
+| `position` | string | `"bottom-right"` | `bottom-right` or `bottom-left` |
+| `theme` | string | `"light"` | `light` or `dark` |
+
+### Colors
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `primaryColor` | string | `"#3d8b7a"` | Main accent color (header, buttons) |
+| `userMessageBg` | string | `"#3b82f6"` | User message bubble background |
+| `userMessageText` | string | `"#ffffff"` | User message text color |
+| `botMessageBg` | string | `"#cef8e4"` | Bot message bubble background |
+| `botMessageText` | string | `"#374151"` | Bot message text color |
+| `agentMessageBg` | string | `"#ecfdf5"` | Agent message bubble background |
+| `agentMessageText` | string | `"#065f46"` | Agent message text color |
+
+### Typography & Layout
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `fontSize` | number | `14` | Base font size in px |
+| `fontFamily` | string | `"Inter"` | Font family |
+| `fontWeight` | string | `"400"` | Font weight |
+| `borderRadius` | number | `16` | Corner radius in px |
+| `widgetWidth` | number | `400` | Widget width in px |
+| `widgetHeight` | number | `600` | Widget height in px |
+
+### Advanced
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `shadowIntensity` | string | `"medium"` | `none`, `light`, `medium`, `strong` |
+| `messageStyle` | string | `"modern"` | `modern`, `bubble`, `sharp` |
+| `showBranding` | boolean | `true` | Show "Powered by BGAI" footer |
+| `zIndex` | number | `9999` | CSS z-index for the widget |
+| `customCSS` | string | `""` | Custom CSS injected into Shadow DOM |
+
+## Custom CSS
+
+For advanced styling, inject CSS directly into the widget's Shadow DOM:
+
+```javascript
+BGAIPremiumWidget.init({
+  chatbotId: 'YOUR_CHATBOT_ID',
+  apiUrl: 'https://api.answira.com',
+  customCSS: `
+    .w-window { border-radius: 24px !important; }
+    .w-toggle { border-radius: 50% !important; }
+    .w-header { backdrop-filter: blur(10px); }
+  `
+});
+```
+
+### Available CSS selectors
+
+| Selector | Element |
+|----------|---------|
+| `.w-window` | Chat window container |
+| `.w-toggle` | Floating chat button |
+| `.w-header` | Header bar |
+| `.w-body` | Message area |
+| `.w-input` | Input area |
+| `.w-msg-bot` | Bot message bubble |
+| `.w-msg-user` | User message bubble |
+| `.w-msg-agent` | Agent message bubble |
+
+## Example: Dark branded widget
+
+```javascript
+BGAIPremiumWidget.init({
+  chatbotId: 'YOUR_CHATBOT_ID',
+  apiUrl: 'https://api.answira.com',
+  theme: 'dark',
+  primaryColor: '#7c3aed',
+  widgetTitle: 'Acme Support',
+  greeting: 'Hey! Need help with anything?',
+  userMessageBg: '#7c3aed',
+  userMessageText: '#ffffff',
+  borderRadius: 20,
+  fontFamily: 'Inter',
+  messageStyle: 'bubble',
+  shadowIntensity: 'strong',
+});
+```

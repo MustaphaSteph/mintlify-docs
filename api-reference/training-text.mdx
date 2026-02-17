@@ -1,0 +1,50 @@
+---
+title: Train from Text
+api: POST /v1/chatbots/{chatbot_id}/training/text
+description: Add text content to the chatbot's knowledge base
+---
+
+Requires `training:write` scope. Rate limit: 10/minute. Returns `202 Accepted` — processing is asynchronous.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<ParamField body="title" type="string" required>
+  A name for this training data entry.
+</ParamField>
+
+<ParamField body="content" type="string" required>
+  The text content to train on.
+</ParamField>
+
+<ParamField body="chunking_strategy" type="string" default="auto">
+  How to split content: `auto`, `individual`, or `semantic_groups`.
+</ParamField>
+
+<ParamField body="custom_metadata" type="object">
+  Optional metadata tags for filtering.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/training/text \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Pricing FAQ",
+    "content": "Q: How much does it cost?\nA: Plans start at $29/month.\n\nQ: Is there a free trial?\nA: Yes, 14 days with full access.",
+    "chunking_strategy": "individual"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 202
+{
+  "session_id": "train_abc123",
+  "status": "queued",
+  "message": "Training data queued for processing"
+}
+```
+</ResponseExample>

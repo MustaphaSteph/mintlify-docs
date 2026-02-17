@@ -1,0 +1,99 @@
+---
+title: Widget Events
+description: Listen to widget lifecycle events
+---
+
+The widget emits events you can listen to for analytics, custom behavior, or integration with your app.
+
+## Session events
+
+Track when chat sessions start and end:
+
+```javascript
+// Widget opened
+window.addEventListener('bgai:widget:open', () => {
+  analytics.track('Chat Widget Opened');
+});
+
+// Widget closed
+window.addEventListener('bgai:widget:close', () => {
+  analytics.track('Chat Widget Closed');
+});
+
+// Session started
+window.addEventListener('bgai:session:start', (e) => {
+  console.log('Session ID:', e.detail.sessionId);
+});
+```
+
+## Message events
+
+React to messages in real-time:
+
+```javascript
+// User sent a message
+window.addEventListener('bgai:message:sent', (e) => {
+  console.log('User said:', e.detail.message);
+});
+
+// Bot responded
+window.addEventListener('bgai:message:received', (e) => {
+  console.log('Bot said:', e.detail.message);
+});
+```
+
+## Handoff events
+
+Detect when conversations transfer to human agents:
+
+```javascript
+window.addEventListener('bgai:handoff:triggered', (e) => {
+  console.log('Transferred to:', e.detail.agentName);
+  showNotification('You are now chatting with a human agent.');
+});
+```
+
+## Programmatic control
+
+Control the widget from your code:
+
+```javascript
+// Open the widget
+BGAIPremiumWidget.open();
+
+// Close the widget
+BGAIPremiumWidget.close();
+
+// Destroy the widget (remove from DOM)
+BGAIPremiumWidget.destroy();
+```
+
+## Use cases
+
+<AccordionGroup>
+  <Accordion title="Track in Google Analytics">
+    ```javascript
+    window.addEventListener('bgai:session:start', () => {
+      gtag('event', 'chat_started', { event_category: 'engagement' });
+    });
+    ```
+  </Accordion>
+  <Accordion title="Show widget only on certain pages">
+    ```javascript
+    if (window.location.pathname.startsWith('/pricing')) {
+      BGAIPremiumWidget.init({ chatbotId: '...', apiUrl: '...' });
+    }
+    ```
+  </Accordion>
+  <Accordion title="Pass logged-in user info">
+    ```javascript
+    BGAIPremiumWidget.init({
+      chatbotId: '...',
+      apiUrl: '...',
+      visitorName: currentUser.name,
+      visitorEmail: currentUser.email,
+      identitySignature: currentUser.bgaiSignature,
+    });
+    ```
+  </Accordion>
+</AccordionGroup>

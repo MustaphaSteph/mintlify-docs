@@ -1,0 +1,30 @@
+---
+title: Request Handoff
+api: POST /v1/sessions/{session_id}/handoff
+description: Transfer conversation from AI to a human support agent
+---
+
+<ParamField path="session_id" type="string" required>
+  The session ID.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the handoff request.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/sessions/ses_1234567890/handoff \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Customer needs billing help"}'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "status": "queued",
+  "message": "You've been connected to our support team. An agent will be with you shortly."
+}
+```
+</ResponseExample>

@@ -1,0 +1,55 @@
+---
+title: Update Chatbot
+api: PUT /v1/chatbots/{chatbot_id}
+description: Update chatbot configuration
+---
+
+Requires `chatbots:write` scope. All fields are optional — only provided fields are updated.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Updated display name.
+</ParamField>
+
+<ParamField body="system_prompt" type="string">
+  Updated system instructions.
+</ParamField>
+
+<ParamField body="ai_model" type="string">
+  Updated AI model.
+</ParamField>
+
+<ParamField body="temperature" type="number">
+  Updated creativity level.
+</ParamField>
+
+<ParamField body="is_active" type="boolean">
+  Enable or disable the chatbot.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PUT https://api.answira.com/v1/chatbots/bot_abc123 \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "system_prompt": "You are a concise support agent. Keep answers under 3 sentences.",
+    "temperature": 0.5
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "id": "bot_abc123",
+  "name": "Support Bot",
+  "system_prompt": "You are a concise support agent. Keep answers under 3 sentences.",
+  "temperature": 0.5,
+  "updated_at": "2025-01-15T10:00:00Z"
+}
+```
+</ResponseExample>

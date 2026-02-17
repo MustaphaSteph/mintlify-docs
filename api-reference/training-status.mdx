@@ -1,0 +1,44 @@
+---
+title: Training Status
+api: GET /v1/chatbots/{chatbot_id}/training/status
+description: Check the status of training data processing
+---
+
+Requires `training:read` scope.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl https://api.answira.com/v1/chatbots/bot_abc123/training/status \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "pending": 0,
+  "processing": 1,
+  "completed": 5,
+  "failed": 0,
+  "is_active": true,
+  "files": [
+    {
+      "filename": "faq.csv",
+      "status": "processing",
+      "chunks_created": 12,
+      "started_at": "2025-01-15T10:30:00Z"
+    },
+    {
+      "filename": "docs.pdf",
+      "status": "completed",
+      "chunks_created": 45,
+      "completed_at": "2025-01-15T10:25:00Z"
+    }
+  ]
+}
+```
+</ResponseExample>

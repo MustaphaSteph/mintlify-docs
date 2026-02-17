@@ -1,0 +1,67 @@
+---
+title: Human Handoff
+description: Seamlessly transfer conversations from AI to human agents
+---
+
+When the AI can't answer a question or detects the customer needs human help, it can transfer the conversation to a live support agent.
+
+## How it works
+
+1. **Auto-detection** — The AI detects when it can't help (low confidence, complex query, explicit request)
+2. **Routing** — The conversation is routed to the best available agent based on skills, workload, and availability
+3. **Transfer** — The agent sees the full conversation history and picks up seamlessly
+4. **Resolution** — The agent resolves the issue and the conversation can return to AI
+
+## Triggering a handoff
+
+### Automatic (AI-initiated)
+
+When `allow_handoff` is enabled on your chatbot, the AI automatically requests a handoff when:
+- Confidence is below threshold
+- The customer explicitly asks for a human
+- The query requires account-specific actions
+- The AI detects frustration or urgency
+
+### Manual (API-initiated)
+
+You can also trigger a handoff programmatically:
+
+```bash
+curl -X POST https://api.answira.com/v1/sessions/ses_123/handoff \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Customer needs billing adjustment"}'
+```
+
+## Checking handler status
+
+Use the [session state endpoint](/api-reference/sessions-state) to check who's handling the conversation:
+
+```bash
+curl https://api.answira.com/v1/sessions/ses_123/state
+```
+
+```json
+{
+  "handler_type": "human",
+  "conversation_status": "active",
+  "agent_id": "agent_456",
+  "agent_name": "Sarah"
+}
+```
+
+## Routing strategies
+
+Configure routing in the dashboard under **Teams → Settings**:
+
+| Strategy | Description |
+|----------|-------------|
+| **Round-robin** | Distributes evenly across available agents |
+| **Skill-based** | Routes to agents with matching skills |
+| **Workload-based** | Routes to the agent with fewest active conversations |
+
+## Webhook events
+
+Subscribe to handoff events to integrate with your CRM or ticketing system:
+
+- `handoff.triggered` — AI transferred to human
+- `handoff.resolved` — Agent resolved the issue

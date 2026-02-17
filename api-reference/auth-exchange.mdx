@@ -1,0 +1,24 @@
+---
+title: API Key Exchange
+api: POST /v1/auth/api-key/exchange
+description: Exchange an API key for a short-lived JWT token
+---
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/auth/api-key/exchange \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer",
+  "expires_in": 1200,
+  "user_id": "usr_1234567890abcdef",
+  "scopes": ["chatbots:read", "chatbots:write", "training:write"]
+}
+```
+</ResponseExample>

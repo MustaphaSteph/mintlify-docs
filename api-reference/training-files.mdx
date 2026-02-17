@@ -1,0 +1,46 @@
+---
+title: Train from Files
+api: POST /v1/chatbots/{chatbot_id}/training/files
+description: Upload files (base64-encoded) for training
+---
+
+Requires `training:write` scope. Max 20 files per request, 50 MB per file. Supported formats: CSV, PDF, TXT, JSON.
+
+<ParamField path="chatbot_id" type="string" required>
+  The chatbot ID.
+</ParamField>
+
+<ParamField body="files" type="array" required>
+  Array of file objects with `filename` and `content` (base64-encoded).
+</ParamField>
+
+<ParamField body="chunking_strategy" type="string" default="auto">
+  How to split content: `auto`, `individual`, or `semantic_groups`.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/training/files \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "files": [
+      {
+        "filename": "faq.csv",
+        "content": "UXVlc3Rpb24sQW5zd2VyCiJXaGF0IGlzIEJHQUk/IiwiQW4gQUkgY2hhdGJvdCBwbGF0Zm9ybSI="
+      }
+    ],
+    "chunking_strategy": "auto"
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 202
+{
+  "status": "queued",
+  "files_accepted": 1,
+  "message": "1 file queued for processing"
+}
+```
+</ResponseExample>
