@@ -1,15 +1,42 @@
 ---
 title: Quickstart
-description: Create your first AI chatbot and embed it in 5 minutes
+description: Create, train, and chat with an AI chatbot in 5 minutes
 ---
+
+## How it works
+
+<Steps>
+  <Step title="Get API Key">
+    Create credentials in your dashboard
+  </Step>
+  <Step title="Create Bot">
+    Configure your chatbot via API
+  </Step>
+  <Step title="Train Data">
+    Upload text, URLs, or files
+  </Step>
+  <Step title="Start Session">
+    Open a conversation for a user
+  </Step>
+  <Step title="Send Messages">
+    Stream real-time AI responses
+  </Step>
+</Steps>
 
 ## 1. Get your API key
 
-Sign up at [app.answira.com](https://app.answira.com/register), then go to **Settings → API Keys** and create a new key with the scopes you need.
+Sign up at [app.answira.com](https://app.answira.com/register), then go to **Settings > API Keys** and create a new key with these scopes:
+
+| Scope | Why you need it |
+|-------|-----------------|
+| `chatbots:write` | Create and manage bots |
+| `training:write` | Upload training data |
+| `training:read` | Check training status |
+
+All authenticated requests use the `X-API-Key` header:
 
 ```bash
-# Your API key looks like this
-ak_live_abc123def456...
+X-API-Key: ak_live_YOUR_KEY
 ```
 
 ## 2. Create a chatbot
@@ -20,11 +47,10 @@ curl -X POST https://api.answira.com/v1/chatbots \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Support Bot",
-    "description": "Customer support for Acme Inc",
-    "system_prompt": "You are a helpful support agent for Acme Inc. Be friendly and concise.",
-    "ai_model": "anthropic/claude-sonnet-4-5",
+    "name": "My Custom Bot",
     "bot_type": "custom",
+    "description": "AI assistant for my app users",
+    "system_prompt": "You are a helpful assistant. Answer questions based on the provided context.",
     "temperature": 0.7,
     "max_tokens": 500
   }'
@@ -33,112 +59,222 @@ curl -X POST https://api.answira.com/v1/chatbots \
 ```python Python
 import requests
 
-response = requests.post(
+bot = requests.post(
     "https://api.answira.com/v1/chatbots",
-    headers={"X-API-Key": "ak_live_YOUR_KEY"},
+    headers={"X-API-Key": "ak_live_YOUR_KEY", "Content-Type": "application/json"},
     json={
-        "name": "Support Bot",
-        "description": "Customer support for Acme Inc",
-        "system_prompt": "You are a helpful support agent for Acme Inc.",
-        "ai_model": "anthropic/claude-sonnet-4-5",
+        "name": "My Custom Bot",
         "bot_type": "custom",
+        "description": "AI assistant for my app users",
+        "system_prompt": "You are a helpful assistant.",
         "temperature": 0.7,
+        "max_tokens": 500,
     }
-)
-chatbot = response.json()
-print(f"Created: {chatbot['id']}")
+).json()
+bot_id = bot["id"]
 ```
 
 ```javascript JavaScript
-const response = await fetch("https://api.answira.com/v1/chatbots", {
+const bot = await fetch("https://api.answira.com/v1/chatbots", {
   method: "POST",
-  headers: {
-    "X-API-Key": "ak_live_YOUR_KEY",
-    "Content-Type": "application/json",
-  },
+  headers: { "X-API-Key": "ak_live_YOUR_KEY", "Content-Type": "application/json" },
   body: JSON.stringify({
-    name: "Support Bot",
-    description: "Customer support for Acme Inc",
-    system_prompt: "You are a helpful support agent for Acme Inc.",
-    ai_model: "anthropic/claude-sonnet-4-5",
+    name: "My Custom Bot",
     bot_type: "custom",
+    description: "AI assistant for my app users",
+    system_prompt: "You are a helpful assistant.",
     temperature: 0.7,
+    max_tokens: 500,
   }),
-});
-const chatbot = await response.json();
+}).then(r => r.json());
 ```
 </CodeGroup>
 
+```json Response
+{
+  "id": "cb_1a2b3c4d-5e6f-7890-abcd-ef1234567890",
+  "name": "My Custom Bot",
+  "bot_type": "custom",
+  "created_at": "2025-08-01T12:00:00Z"
+}
+```
+
+<Info>Save the `id` value. You will use it for training and sessions.</Info>
+
 ## 3. Train it with your data
 
-Upload training data so your bot can answer questions about your product.
+Training is **asynchronous**. All endpoints return `202 Accepted` with a `session_id` to track progress.
 
 <CodeGroup>
 ```bash cURL
-# Train from text
 curl -X POST https://api.answira.com/v1/chatbots/{chatbot_id}/training/text \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Pricing FAQ",
-    "content": "Q: How much does it cost?\nA: Our starter plan is $29/month with 1,000 messages included.\n\nQ: Is there a free trial?\nA: Yes, we offer a 14-day free trial with full access."
+    "content": "Q: How much does it cost?\nA: Starter plan is $29/month.\n\nQ: Free trial?\nA: Yes, 14-day free trial."
   }'
-
-# Train from URLs
-curl -X POST https://api.answira.com/v1/chatbots/{chatbot_id}/training/urls \
-  -H "X-API-Key: ak_live_YOUR_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "urls": ["https://acme.com/docs", "https://acme.com/faq"],
-    "mode": "individual"
-  }'
-```
-</CodeGroup>
-
-<Note>
-  Training is asynchronous. Use the [training status endpoint](/api-reference/training-status) to check progress.
-</Note>
-
-## 4. Chat with your bot
-
-<CodeGroup>
-```bash cURL
-# Start a session
-SESSION=$(curl -s -X POST https://api.answira.com/v1/sessions \
-  -H "Content-Type: application/json" \
-  -d '{"chatbot_id": "YOUR_CHATBOT_ID"}' | jq -r '.session_id')
-
-# Send a message (streaming)
-curl -N -X POST https://api.answira.com/v1/messages/stream \
-  -H "Content-Type: application/json" \
-  -d "{\"session_id\": \"$SESSION\", \"message\": \"What are your pricing plans?\"}"
 ```
 
 ```python Python
-import requests
-
-# Start session
-session = requests.post(
-    "https://api.answira.com/v1/sessions",
-    json={"chatbot_id": "YOUR_CHATBOT_ID"}
+train = requests.post(
+    f"https://api.answira.com/v1/chatbots/{bot_id}/training/text",
+    headers={"X-API-Key": "ak_live_YOUR_KEY", "Content-Type": "application/json"},
+    json={"title": "Pricing FAQ", "content": "Q: How much?\nA: $29/month."}
 ).json()
+print(f"Queued: {train['session_id']}")
+```
 
-# Send message
-response = requests.post(
-    "https://api.answira.com/v1/messages",
-    json={
-        "session_id": session["session_id"],
-        "message": "What are your pricing plans?"
-    }
-).json()
-
-print(response["response"])
+```javascript JavaScript
+const train = await fetch(`https://api.answira.com/v1/chatbots/${bot.id}/training/text`, {
+  method: "POST",
+  headers: { "X-API-Key": "ak_live_YOUR_KEY", "Content-Type": "application/json" },
+  body: JSON.stringify({ title: "Pricing FAQ", content: "Q: How much?\nA: $29/month." }),
+}).then(r => r.json());
 ```
 </CodeGroup>
 
-## 5. Embed the widget
+```json Response (202)
+{
+  "session_id": "txt_a1b2c3d4e5f6",
+  "chatbot_id": "cb_123",
+  "status": "queued",
+  "message": "Training queued for background processing",
+  "data_source_ids": ["ds_abc123"]
+}
+```
 
-Add this snippet to any HTML page:
+### Poll until training completes
+
+```bash
+curl https://api.answira.com/v1/chatbots/{chatbot_id}/training/status \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+```json
+{
+  "pending": 0, "processing": 0, "completed": 1, "failed": 0,
+  "is_active": false,
+  "files": [{ "data_source_id": "ds_abc123", "filename": "Pricing FAQ", "status": "completed", "chunks_stored": 2 }]
+}
+```
+
+<Tip>**Done when:** `is_active === false` and `pending === 0` and `processing === 0`. Poll every 2-3 seconds.</Tip>
+
+## 4. Start a chat session
+
+Chat endpoints are **public** and do not require an API key.
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.answira.com/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "cb_YOUR_BOT_ID",
+    "visitor_name": "Alice Smith",
+    "customer_metadata": { "variables": { "user_id": "alice" } }
+  }'
+```
+
+```python Python
+session = requests.post("https://api.answira.com/v1/sessions", json={
+    "chatbot_id": bot_id,
+    "visitor_name": "Alice Smith",
+    "customer_metadata": {"variables": {"user_id": "alice"}},
+}).json()
+```
+
+```javascript JavaScript
+const session = await fetch("https://api.answira.com/v1/sessions", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    chatbot_id: bot.id,
+    visitor_name: "Alice Smith",
+    customer_metadata: { variables: { user_id: "alice" } },
+  }),
+}).then(r => r.json());
+```
+</CodeGroup>
+
+```json Response
+{
+  "session_id": "sess_abc123",
+  "conversation_id": "conv_def456",
+  "visitor_id": "alice",
+  "status": "active",
+  "is_new_conversation": true
+}
+```
+
+<Note>Using the same `visitor_id` resumes the existing conversation instead of creating a new one.</Note>
+
+## 5. Send messages (streaming)
+
+Get real-time AI responses via **Server-Sent Events**:
+
+<CodeGroup>
+```bash cURL
+curl -N -X POST https://api.answira.com/v1/messages/stream \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "sess_abc123", "message": "What are your pricing plans?"}'
+```
+
+```python Python
+import json
+
+resp = requests.post("https://api.answira.com/v1/messages/stream",
+    json={"session_id": session["session_id"], "message": "What are your pricing plans?"},
+    stream=True)
+for line in resp.iter_lines(decode_unicode=True):
+    if not line or not line.startswith("data: "): continue
+    data = line[6:]
+    if data == "[DONE]": break
+    event = json.loads(data)
+    if event["type"] == "text-delta":
+        print(event["delta"], end="", flush=True)
+    elif event["type"] == "finish":
+        print(f"\nTokens: {event['usage']}")
+```
+
+```javascript JavaScript
+const stream = await fetch("https://api.answira.com/v1/messages/stream", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ session_id: session.session_id, message: "What are your pricing plans?" }),
+});
+const reader = stream.body.getReader();
+const decoder = new TextDecoder();
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  for (const line of decoder.decode(value).split("\n")) {
+    if (!line.startsWith("data: ")) continue;
+    const data = line.slice(6);
+    if (data === "[DONE]") break;
+    const event = JSON.parse(data);
+    if (event.type === "text-delta") process.stdout.write(event.delta);
+    else if (event.type === "finish") console.log("\nDone!", event.usage);
+  }
+}
+```
+</CodeGroup>
+
+```
+data: {"type":"message-start","messageId":"msg_abc123"}
+data: {"type":"text-start","id":"t1"}
+data: {"type":"text-delta","id":"t1","delta":"Our"}
+data: {"type":"text-delta","id":"t1","delta":" starter"}
+data: {"type":"text-delta","id":"t1","delta":" plan"}
+...
+data: {"type":"text-end","id":"t1"}
+data: {"type":"finish","usage":{"input":150,"output":42}}
+data: [DONE]
+```
+
+## 6. Embed the widget (optional)
+
+Drop-in chat UI for any website:
 
 ```html
 <script src="https://api.answira.com/static/premium-widget-v4.js"></script>
@@ -146,7 +282,6 @@ Add this snippet to any HTML page:
   BGAIPremiumWidget.init({
     chatbotId: 'YOUR_CHATBOT_ID',
     apiUrl: 'https://api.answira.com',
-    position: 'bottom-right',
     primaryColor: '#3d8b7a',
     widgetTitle: 'Support Bot',
     greeting: 'Hi! How can I help you today?'
@@ -154,4 +289,19 @@ Add this snippet to any HTML page:
 </script>
 ```
 
-That's it — your AI chatbot is live. Visit the [Widget Customization](/widget/customization) guide to style it to match your brand.
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Multi-User Isolation" icon="users" href="/guides/multi-user-isolation">
+    Build per-user chatbots with variable-based data filtering.
+  </Card>
+  <Card title="Streaming Guide" icon="bolt" href="/guides/streaming">
+    SSE event types, error handling, and heartbeats.
+  </Card>
+  <Card title="Training Data" icon="database" href="/guides/training-data">
+    Chunking strategies, concurrency, and best practices.
+  </Card>
+  <Card title="SDK Examples" icon="code" href="/guides/sdks">
+    End-to-end examples in JavaScript, Python, PHP, and Swift.
+  </Card>
+</CardGroup>

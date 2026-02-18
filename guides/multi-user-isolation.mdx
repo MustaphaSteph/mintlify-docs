@@ -1,0 +1,174 @@
+---
+title: Multi-User Data Isolation
+description: Build per-user chatbots on a single bot using variables
+---
+
+The key to building per-user AI chatbots is **data isolation**. One bot, many users -- each user only sees answers from their own data.
+
+## How it works
+
+1. Configure a **required variable** (e.g. `user_id`) on your bot
+2. Tag training data with that variable via `custom_metadata`
+3. Pass the same variable when starting a chat session
+4. The AI automatically filters search results to that user's data
+
+## Step 0: Configure required variables
+
+Add `user_id` as a required variable with auto-filtering enabled:
+
+```bash
+curl -X PUT https://api.answira.com/v1/chatbots/{chatbot_id} \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "settings": {
+      "variables": {
+        "user_id": {
+          "required": true,
+          "auto_filter": true,
+          "auto_train": true,
+          "identity": true,
+          "default": ""
+        }
+      }
+    }
+  }'
+```
+
+| Flag | Purpose |
+|------|---------|
+| `required` | Reject requests missing this variable (400 error) |
+| `auto_filter` | Automatically filter vector search results by this variable at query time |
+| `auto_train` | Automatically tag training data chunks with this variable's value |
+| `identity` | Use as visitor identity for analytics and conversation continuity (one per bot) |
+
+## Step 1: Tag training data with user_id
+
+Include `custom_metadata.user_id` when training to associate data with a specific user:
+
+```bash
+# Train data for Alice
+curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Alice Notes",
+    "content": "Alice specific knowledge...",
+    "custom_metadata": { "user_id": "alice" }
+  }'
+
+# Train data for Bob
+curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Bob Notes",
+    "content": "Bob specific knowledge...",
+    "custom_metadata": { "user_id": "bob" }
+  }'
+```
+
+<Warning>
+Since `user_id` is required, requests without it return a `400` error:
+```json
+{"detail": "Missing required variable: user_id"}
+```
+</Warning>
+
+## Step 2: Pass user_id when starting a session
+
+Include the same `user_id` in session variables. The AI will only search training data tagged with that user:
+
+```bash
+# Session for Alice -- only sees Alice's data
+curl -X POST https://api.answira.com/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "cb_xxx",
+    "visitor_id": "alice",
+    "customer_metadata": {
+      "variables": { "user_id": "alice" }
+    }
+  }'
+```
+
+## Step 3: Chat normally
+
+Messages sent in Alice's session only retrieve chunks tagged with `user_id: "alice"`:
+
+```bash
+curl -N -X POST https://api.answira.com/v1/messages/stream \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "sess_alice_123", "message": "What are my notes about?"}'
+```
+
+Alice gets answers from her data. Bob gets answers from his. No data leaks between users.
+
+## Identity variable and visitor_id
+
+When a variable is marked as `identity: true`, it automatically becomes the `visitor_id` if none is provided:
+
+- If you send `"user_id": "alice"` in variables and no `visitor_id`, the session's `visitor_id` becomes `"alice"`
+- This powers **conversation continuity** (same identity = resume conversation) and **analytics tracking** (unique users, returning, new)
+
+## Result
+
+```
+One bot, many users:
+  Alice asks "What's in my notes?"  -->  Searches only Alice's data
+  Bob asks "What's in my notes?"    -->  Searches only Bob's data
+  No data leaks. Scale to thousands of users on a single bot.
+```
+
+## Full example (Python)
+
+```python
+import requests, time, json
+
+API_KEY = "ak_live_YOUR_KEY"
+BASE = "https://api.answira.com/v1"
+headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+
+# 1. Create bot with required user_id variable
+bot = requests.post(f"{BASE}/chatbots", headers=headers, json={
+    "name": "Multi-User Bot",
+    "bot_type": "custom",
+    "settings": {
+        "variables": {
+            "user_id": {"required": True, "auto_filter": True, "auto_train": True, "identity": True}
+        }
+    }
+}).json()
+bot_id = bot["id"]
+
+# 2. Train data for two users
+for user, content in [("alice", "Alice's product is a CRM tool."), ("bob", "Bob's product is a design tool.")]:
+    requests.post(f"{BASE}/chatbots/{bot_id}/training/text", headers=headers, json={
+        "title": f"{user} docs",
+        "content": content,
+        "custom_metadata": {"user_id": user}
+    })
+
+# 3. Wait for training
+time.sleep(5)
+
+# 4. Chat as Alice
+session = requests.post(f"{BASE}/sessions", json={
+    "chatbot_id": bot_id,
+    "customer_metadata": {"variables": {"user_id": "alice"}}
+}).json()
+
+resp = requests.post(f"{BASE}/messages/stream", json={
+    "session_id": session["session_id"],
+    "message": "What is my product?"
+}, stream=True)
+
+for line in resp.iter_lines(decode_unicode=True):
+    if line and line.startswith("data: "):
+        data = line[6:]
+        if data == "[DONE]": break
+        event = json.loads(data)
+        if event["type"] == "text-delta":
+            print(event["delta"], end="", flush=True)
+# Output: "Your product is a CRM tool." (not Bob's design tool)
+```

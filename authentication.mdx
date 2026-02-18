@@ -14,10 +14,10 @@ curl https://api.answira.com/v1/chatbots \
 
 ### Creating API keys
 
-1. Go to **Settings → API Keys** in the dashboard
+1. Go to **Settings > API Keys** in the dashboard
 2. Click **Create API Key**
 3. Select the scopes your integration needs
-4. Copy the key — it's only shown once
+4. Copy the key -- it is only shown once
 
 ### Scopes
 
@@ -44,13 +44,13 @@ ak_live_abc123def456ghi789...
 
 ## Public endpoints
 
-Some endpoints don't require an API key — they're designed for use from the browser widget:
+Some endpoints don't require an API key -- they are designed for use from the browser widget or client-side apps:
 
 | Endpoint | Purpose |
 |----------|---------|
 | `POST /v1/sessions` | Start a chat session |
 | `POST /v1/messages` | Send a message |
-| `POST /v1/messages/stream` | Stream a response |
+| `POST /v1/messages/stream` | Stream a response (SSE) |
 | `GET /v1/sessions/{id}/messages` | Fetch message history |
 | `POST /v1/visitors/identify` | Identify a visitor |
 | `GET /v1/chatbots/{id}/config` | Get widget config |
@@ -61,7 +61,7 @@ Some endpoints don't require an API key — they're designed for use from the br
 
 ## JWT token exchange
 
-For advanced integrations, you can exchange an API key for a short-lived JWT token:
+For advanced integrations, exchange an API key for a short-lived JWT token:
 
 ```bash
 curl -X POST https://api.answira.com/v1/auth/api-key/exchange \
@@ -87,37 +87,97 @@ curl https://api.answira.com/v1/chatbots \
 
 ## Visitor identity verification (HMAC)
 
-For the embedded widget, you can verify visitor identity using HMAC signatures to prevent impersonation:
+For the embedded widget, verify visitor identity using HMAC signatures to prevent impersonation:
+
+<CodeGroup>
+```javascript Node.js
+const crypto = require('crypto');
+
+function generateIdentitySignature(email, apiKey) {
+  return crypto
+    .createHmac('sha256', apiKey)
+    .update(email)
+    .digest('hex');
+}
+
+const signature = generateIdentitySignature('john@acme.com', 'ak_live_YOUR_KEY');
+```
+
+```python Python
+import hmac
+import hashlib
+
+def generate_identity_signature(email: str, api_key: str) -> str:
+    return hmac.new(
+        api_key.encode(),
+        email.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+signature = generate_identity_signature("john@acme.com", "ak_live_YOUR_KEY")
+```
+
+```php PHP
+$signature = hash_hmac('sha256', 'john@acme.com', 'ak_live_YOUR_KEY');
+```
+</CodeGroup>
+
+Pass the signature to the widget:
 
 ```javascript
-// Server-side: generate signature
-const crypto = require('crypto');
-const signature = crypto
-  .createHmac('sha256', 'YOUR_API_KEY')
-  .update(visitorEmail)
-  .digest('hex');
-
-// Client-side: pass to widget
 BGAIPremiumWidget.init({
   chatbotId: 'YOUR_CHATBOT_ID',
-  visitorEmail: 'user@example.com',
-  identitySignature: signature,
+  apiUrl: 'https://api.answira.com',
+  visitorEmail: 'john@acme.com',
+  visitorName: 'John Doe',
+  identitySignature: signature, // Server-generated HMAC
 });
 ```
+
+<Warning>
+  Never expose your API key in client-side code. Generate the HMAC signature on your server and pass only the signature to the client.
+</Warning>
+
+## Idempotency
+
+Use the `Idempotency-Key` header to prevent duplicate operations when retrying requests:
+
+```bash
+curl -X POST https://api.answira.com/v1/messages/stream \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: msg-unique-001" \
+  -d '{"session_id": "ses_123", "message": "Hello"}'
+```
+
+If the same key is sent again, the API returns `409 Conflict` instead of processing a duplicate.
 
 ## Rate limits
 
 | Endpoint | Limit |
 |----------|-------|
 | `POST /v1/sessions` | 30/minute |
-| `POST /v1/messages` | 60/minute |
 | `POST /v1/messages/stream` | 60/minute |
+| `POST /v1/messages` | 60/minute |
 | `POST /v1/chatbots` | 20/minute |
-| `POST /v1/training/*` | 10/minute |
+| `POST /v1/.../training/*` | 10/minute |
+| `GET /v1/.../training/status` | 60/minute |
 | `GET /v1/sessions/*/messages` | 120/minute |
 | `GET /v1/chatbots/*` | 120/minute |
+| `POST /v1/sessions/*/handoff` | 10/minute |
 
 When rate limited, the API returns `429 Too Many Requests` with a `Retry-After` header.
+
+## Upload limits
+
+| Limit | Value |
+|-------|-------|
+| Max files per request | 20 |
+| Max file size (per file) | 50 MB |
+| Max total request size | 500 MB |
+| Supported file types | `.csv`, `.txt`, `.pdf`, `.json` |
+| Storage quota | Per plan (check your plan) |
+
+Files are validated for content-type integrity (magic bytes must match extension). Uploads exceeding your plan's storage quota are rejected with `403`.
 
 ## Error responses
 
@@ -132,8 +192,10 @@ All errors follow a consistent format:
 | Status | Meaning |
 |--------|---------|
 | `400` | Bad request / validation error |
+| `402` | Plan limit reached (upgrade required) |
 | `403` | Invalid API key or insufficient scope |
 | `404` | Resource not found |
 | `409` | Conflict (duplicate idempotency key) |
+| `413` | Payload too large (file size or request size exceeded) |
 | `429` | Rate limited |
 | `500` | Internal server error |

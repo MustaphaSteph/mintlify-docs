@@ -13,9 +13,137 @@ Your chatbot answers questions using a knowledge base built from your training d
 | **URLs** | Documentation, blog posts, help articles | [`POST /training/urls`](/api-reference/training-urls) |
 | **Files** | PDFs, CSVs, JSON, TXT documents | [`POST /training/files`](/api-reference/training-files) |
 
+## Async processing
+
+All training is **asynchronous** and queue-based. Every training endpoint returns `202 Accepted` immediately with a `session_id`:
+
+```json
+{
+  "session_id": "txt_a1b2c3d4e5f6",
+  "chatbot_id": "cb_123",
+  "status": "queued",
+  "message": "Training queued for background processing",
+  "data_source_ids": ["ds_abc123"]
+}
+```
+
+Tasks are processed by background workers. Poll the status endpoint to track progress.
+
+## Processing pipeline
+
+After uploading:
+
+1. Content is queued for processing
+2. Text is extracted and cleaned
+3. Content is split into chunks using your chosen strategy
+4. Each chunk is embedded as a vector (OpenAI embeddings)
+5. Vectors are stored in the knowledge base (Qdrant)
+
+## Polling training status
+
+### All sessions
+
+```bash
+curl https://api.answira.com/v1/chatbots/{chatbot_id}/training/status \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+```json
+{
+  "chatbot_id": "cb_123",
+  "chatbot_name": "My Custom Bot",
+  "pending": 1,
+  "processing": 1,
+  "completed": 1,
+  "failed": 0,
+  "is_active": true,
+  "total_files": 3,
+  "files": [
+    { "data_source_id": "ds_abc123", "filename": "User FAQ", "status": "completed", "chunks_stored": 18 },
+    { "filename": "guide.pdf", "status": "processing", "chunks_stored": 0 },
+    { "filename": "notes.txt", "status": "pending", "chunks_stored": 0 }
+  ]
+}
+```
+
+### Specific session
+
+```bash
+curl https://api.answira.com/v1/chatbots/{chatbot_id}/training/status/{session_id} \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+```json
+{
+  "session_id": "txt_a1b2c3d4e5f6",
+  "status": "completed",
+  "completed": true,
+  "data_source_ids": ["ds_abc123"],
+  "files": [
+    { "data_source_id": "ds_abc123", "filename": "User FAQ", "status": "completed", "chunks_stored": 18 }
+  ]
+}
+```
+
+<Tip>**Done when:** `is_active === false` and `pending === 0` and `processing === 0`. Poll every 2-3 seconds.</Tip>
+
+## Concurrency limits
+
+| Limit | Value |
+|-------|-------|
+| Per user | Up to **3 tasks** process concurrently |
+| Per upload session | Up to **3 files** process in parallel |
+| System-wide | 4 worker coroutines handle the global queue |
+
+Additional requests queue automatically and process as slots open.
+
+### Parallel training example
+
+Send multiple requests in parallel. They queue and process concurrently:
+
+```python
+import requests, time, concurrent.futures
+
+api_key = "ak_live_YOUR_KEY"
+bot_id = "cb_YOUR_BOT_ID"
+headers = {"X-API-Key": api_key, "Content-Type": "application/json"}
+
+# 1. Fire off multiple training requests (all return 202 instantly)
+def train_doc(doc):
+    resp = requests.post(
+        f"https://api.answira.com/v1/chatbots/{bot_id}/training/text",
+        headers=headers,
+        json={"title": doc["title"], "content": doc["content"]}
+    )
+    return resp.json()
+
+documents = [
+    {"title": "FAQ", "content": "Q: Pricing?\nA: $29/month."},
+    {"title": "Setup Guide", "content": "Step 1: Create account..."},
+    {"title": "API Docs", "content": "Authentication uses X-API-Key header..."},
+]
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
+    results = list(pool.map(train_doc, documents))
+    print(f"Queued {len(results)} tasks")
+
+# 2. Poll until all done
+while True:
+    status = requests.get(
+        f"https://api.answira.com/v1/chatbots/{bot_id}/training/status",
+        headers=headers
+    ).json()
+    print(f"Pending: {status['pending']}, Processing: {status['processing']}, Completed: {status['completed']}")
+    if not status["is_active"] and status["pending"] == 0 and status["processing"] == 0:
+        break
+    time.sleep(2)
+
+print("All training complete!")
+```
+
 ## Chunking strategies
 
-When you upload content, it gets split into **chunks** — small searchable segments that the AI retrieves when answering questions.
+When you upload content, it gets split into **chunks** -- small searchable segments the AI retrieves when answering.
 
 | Strategy | Description | Best for |
 |----------|-------------|----------|
@@ -29,27 +157,30 @@ curl -X POST https://api.answira.com/v1/chatbots/bot_abc/training/text \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Product FAQ",
-    "content": "Q: What is BGAI?\nA: An AI chatbot platform.\n\nQ: How much does it cost?\nA: Plans start at $29/month.",
+    "content": "Q: What is BGAI?\nA: An AI chatbot platform.\n\nQ: How much?\nA: Plans start at $29/month.",
     "chunking_strategy": "individual"
   }'
 ```
 
-## Processing pipeline
+## Custom metadata
 
-Training is **asynchronous**. After uploading:
-
-1. Content is queued for processing
-2. Text is extracted and cleaned
-3. Content is split into chunks using your chosen strategy
-4. Each chunk is embedded as a vector
-5. Vectors are stored in the knowledge base
-
-Poll the [training status endpoint](/api-reference/training-status) to check progress:
+Tag training data with metadata for filtering at query time:
 
 ```bash
-curl https://api.answira.com/v1/chatbots/bot_abc/training/status \
-  -H "X-API-Key: ak_live_YOUR_KEY"
+curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Alice Knowledge Base",
+    "content": "Your content here...",
+    "custom_metadata": {
+      "user_id": "alice",
+      "category": "onboarding"
+    }
+  }'
 ```
+
+See the [Multi-User Isolation](/guides/multi-user-isolation) guide for how metadata enables per-user data filtering.
 
 ## Tips for good training data
 
@@ -68,11 +199,14 @@ curl https://api.answira.com/v1/chatbots/bot_abc/training/status \
   </Accordion>
 </AccordionGroup>
 
-## Limits
+## Upload limits
 
-| Metric | Limit |
-|--------|-------|
-| Files per request | 20 |
-| File size (each) | 50 MB |
-| Supported formats | CSV, PDF, TXT, JSON |
-| Storage | Per plan (check [Usage](/api-reference/usage)) |
+| Limit | Value |
+|-------|-------|
+| Max files per request | 20 |
+| Max file size (per file) | 50 MB |
+| Max total request size | 500 MB |
+| Supported file types | `.csv`, `.txt`, `.pdf`, `.json` |
+| Storage quota | Per plan (check [Usage](/api-reference/usage)) |
+
+Files are validated for content-type integrity (magic bytes must match extension). Uploads exceeding your plan's storage quota are rejected with `403`.

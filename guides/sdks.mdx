@@ -1,0 +1,332 @@
+---
+title: SDK Examples
+description: Full end-to-end integration examples in popular languages
+---
+
+Each example below creates a bot, trains it, waits for training, starts a session, and sends a streaming message. Copy and adapt to your stack.
+
+## JavaScript / Node.js
+
+```javascript
+const API_KEY = "ak_live_YOUR_KEY";
+const BASE = "https://api.answira.com/v1";
+const headers = { "X-API-Key": API_KEY, "Content-Type": "application/json" };
+
+async function main() {
+  // 1. Create a chatbot
+  const bot = await fetch(`${BASE}/chatbots`, {
+    method: "POST", headers,
+    body: JSON.stringify({
+      name: "My Bot", bot_type: "custom",
+      settings: {
+        variables: {
+          user_id: { required: true, auto_filter: true, auto_train: true, identity: true }
+        }
+      }
+    })
+  }).then(r => r.json());
+  const botId = bot.id;
+  console.log("Created bot:", botId);
+
+  // 2. Train with text (returns 202)
+  const train = await fetch(`${BASE}/chatbots/${botId}/training/text`, {
+    method: "POST", headers,
+    body: JSON.stringify({
+      title: "FAQ",
+      content: "To reset your password, go to Settings > Security > Reset Password.",
+      custom_metadata: { user_id: "alice" }
+    })
+  }).then(r => r.json());
+  console.log("Queued:", train.session_id);
+
+  // 3. Poll until training completes
+  while (true) {
+    const status = await fetch(`${BASE}/chatbots/${botId}/training/status`, { headers })
+      .then(r => r.json());
+    console.log(`Pending: ${status.pending}, Processing: ${status.processing}, Completed: ${status.completed}`);
+    if (!status.is_active && status.pending === 0 && status.processing === 0) break;
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  console.log("Training complete!");
+
+  // 4. Start a chat session (no API key needed)
+  const session = await fetch(`${BASE}/sessions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chatbot_id: botId,
+      visitor_id: "alice-web",
+      customer_metadata: { variables: { user_id: "alice" } }
+    })
+  }).then(r => r.json());
+
+  // 5. Send a message (streaming SSE)
+  const stream = await fetch(`${BASE}/messages/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: session.session_id,
+      message: "How do I reset my password?"
+    })
+  });
+
+  const reader = stream.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    for (const line of decoder.decode(value).split("\n")) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6);
+      if (data === "[DONE]") break;
+      const event = JSON.parse(data);
+      if (event.type === "text-delta") {
+        process.stdout.write(event.content);
+      } else if (event.type === "finish") {
+        console.log("\nDone! Tokens used:", event.usage);
+      }
+    }
+  }
+}
+
+main();
+```
+
+## Python
+
+```python
+import requests, time, json
+
+API_KEY = "ak_live_YOUR_KEY"
+BASE = "https://api.answira.com/v1"
+headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
+
+# 1. Create a chatbot
+bot = requests.post(f"{BASE}/chatbots", headers=headers, json={
+    "name": "My Bot", "bot_type": "custom",
+    "settings": {
+        "variables": {
+            "user_id": {"required": True, "auto_filter": True, "auto_train": True, "identity": True}
+        }
+    }
+}).json()
+bot_id = bot["id"]
+print(f"Created bot: {bot_id}")
+
+# 2. Train with text (returns 202)
+train = requests.post(f"{BASE}/chatbots/{bot_id}/training/text", headers=headers, json={
+    "title": "FAQ",
+    "content": "To reset your password, go to Settings > Security > Reset Password.",
+    "custom_metadata": {"user_id": "alice"}
+}).json()
+print(f"Queued: {train['session_id']}")
+
+# 3. Poll until training completes
+while True:
+    status = requests.get(f"{BASE}/chatbots/{bot_id}/training/status", headers=headers).json()
+    print(f"Pending: {status['pending']}, Processing: {status['processing']}, Completed: {status['completed']}")
+    if not status["is_active"] and status["pending"] == 0 and status["processing"] == 0:
+        break
+    time.sleep(2)
+print("Training complete!")
+
+# 4. Start a chat session (no API key needed)
+session = requests.post(f"{BASE}/sessions", json={
+    "chatbot_id": bot_id,
+    "visitor_id": "alice-web",
+    "customer_metadata": {"variables": {"user_id": "alice"}}
+}).json()
+
+# 5. Send a message (streaming SSE)
+resp = requests.post(f"{BASE}/messages/stream", json={
+    "session_id": session["session_id"],
+    "message": "How do I reset my password?"
+}, stream=True)
+
+for line in resp.iter_lines(decode_unicode=True):
+    if not line or not line.startswith("data: "):
+        continue
+    data = line[6:]
+    if data == "[DONE]":
+        break
+    event = json.loads(data)
+    if event["type"] == "text-delta":
+        print(event["delta"], end="", flush=True)
+    elif event["type"] == "finish":
+        print(f"\nDone! Tokens used: {event['usage']}")
+```
+
+## PHP
+
+```php
+<?php
+$API_KEY = "ak_live_YOUR_KEY";
+$BASE = "https://api.answira.com/v1";
+
+function api($method, $url, $body = null, $useKey = true) {
+    global $API_KEY;
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    $headers = ["Content-Type: application/json"];
+    if ($useKey) $headers[] = "X-API-Key: $API_KEY";
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    if ($body) curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($body));
+    $resp = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($resp, true);
+}
+
+// 1. Create a chatbot
+$bot = api("POST", "$BASE/chatbots", [
+    "name" => "My Bot", "bot_type" => "custom",
+    "settings" => [
+        "variables" => [
+            "user_id" => ["required" => true, "auto_filter" => true, "auto_train" => true, "identity" => true]
+        ]
+    ]
+]);
+$botId = $bot["id"];
+echo "Created bot: $botId\n";
+
+// 2. Train with text (returns 202)
+$train = api("POST", "$BASE/chatbots/$botId/training/text", [
+    "title" => "FAQ",
+    "content" => "To reset your password, go to Settings > Security > Reset Password.",
+    "custom_metadata" => ["user_id" => "alice"]
+]);
+echo "Queued: {$train['session_id']}\n";
+
+// 3. Poll until training completes
+while (true) {
+    $status = api("GET", "$BASE/chatbots/$botId/training/status");
+    echo "Pending: {$status['pending']}, Processing: {$status['processing']}, Completed: {$status['completed']}\n";
+    if (!$status["is_active"] && $status["pending"] == 0 && $status["processing"] == 0) break;
+    sleep(2);
+}
+echo "Training complete!\n";
+
+// 4. Start a chat session (no API key needed)
+$session = api("POST", "$BASE/sessions", [
+    "chatbot_id" => $botId,
+    "visitor_id" => "alice-web",
+    "customer_metadata" => ["variables" => ["user_id" => "alice"]]
+], false);
+
+// 5. Send a message (streaming SSE)
+$ch = curl_init("$BASE/messages/stream");
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: application/json"]);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode([
+    "session_id" => $session["session_id"],
+    "message" => "How do I reset my password?"
+]));
+curl_setopt($ch, CURLOPT_WRITEFUNCTION, function($curl, $data) {
+    foreach (explode("\n", $data) as $line) {
+        if (strpos($line, "data: ") !== 0) continue;
+        $payload = substr($line, 6);
+        if ($payload === "[DONE]") break;
+        $event = json_decode($payload, true);
+        if ($event["type"] === "text-delta") echo $event["delta"];
+        elseif ($event["type"] === "finish") echo "\nDone!\n";
+    }
+    return strlen($data);
+});
+curl_exec($ch);
+curl_close($ch);
+```
+
+## Swift
+
+```swift
+import Foundation
+
+let apiKey = "ak_live_YOUR_KEY"
+let base = "https://api.answira.com/v1"
+
+func api(_ method: String, _ path: String, body: [String: Any]? = nil, useKey: Bool = true) async throws -> [String: Any] {
+    var req = URLRequest(url: URL(string: "\(base)\(path)")!)
+    req.httpMethod = method
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    if useKey { req.setValue(apiKey, forHTTPHeaderField: "X-API-Key") }
+    if let body { req.httpBody = try JSONSerialization.data(withJSONObject: body) }
+    let (data, _) = try await URLSession.shared.data(for: req)
+    return try JSONSerialization.jsonObject(with: data) as! [String: Any]
+}
+
+Task {
+    // 1. Create a chatbot
+    let bot = try await api("POST", "/chatbots", body: [
+        "name": "My Bot", "bot_type": "custom",
+        "settings": ["variables": ["user_id": ["required": true, "auto_filter": true, "auto_train": true, "identity": true]]]
+    ])
+    let botId = bot["id"] as! String
+    print("Created bot: \(botId)")
+
+    // 2. Train with text (returns 202)
+    let train = try await api("POST", "/chatbots/\(botId)/training/text", body: [
+        "title": "FAQ",
+        "content": "To reset your password, go to Settings > Security > Reset Password.",
+        "custom_metadata": ["user_id": "alice"]
+    ])
+    print("Queued: \(train["session_id"] ?? "")")
+
+    // 3. Poll until training completes
+    while true {
+        let status = try await api("GET", "/chatbots/\(botId)/training/status")
+        let pending = status["pending"] as? Int ?? 0
+        let processing = status["processing"] as? Int ?? 0
+        let isActive = status["is_active"] as? Bool ?? false
+        if !isActive && pending == 0 && processing == 0 { break }
+        try await Task.sleep(nanoseconds: 2_000_000_000)
+    }
+    print("Training complete!")
+
+    // 4. Start a chat session (no API key needed)
+    let session = try await api("POST", "/sessions", body: [
+        "chatbot_id": botId,
+        "visitor_id": "alice-ios",
+        "customer_metadata": ["variables": ["user_id": "alice"]]
+    ], useKey: false)
+    let sessionId = session["session_id"] as! String
+
+    // 5. Send a message (streaming SSE)
+    var streamReq = URLRequest(url: URL(string: "\(base)/messages/stream")!)
+    streamReq.httpMethod = "POST"
+    streamReq.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    streamReq.httpBody = try JSONSerialization.data(withJSONObject: [
+        "session_id": sessionId,
+        "message": "How do I reset my password?"
+    ])
+
+    let (bytes, _) = try await URLSession.shared.bytes(for: streamReq)
+    for try await line in bytes.lines {
+        guard line.hasPrefix("data: ") else { continue }
+        let payload = String(line.dropFirst(6))
+        if payload == "[DONE]" { break }
+        guard let data = payload.data(using: .utf8),
+              let event = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let type = event["type"] as? String else { continue }
+        if type == "text-delta", let content = event["delta"] as? String {
+            print(content, terminator: "")
+        } else if type == "finish" {
+            print("\nDone!")
+        }
+    }
+}
+```
+
+## Pattern
+
+All examples follow the same flow:
+
+1. **Create bot** with required variables (`chatbots:write` scope)
+2. **Train data** with `custom_metadata` for user isolation (`training:write` scope)
+3. **Poll status** until `is_active === false` (`training:read` scope)
+4. **Start session** with user variables (no API key needed)
+5. **Stream messages** via SSE (no API key needed)
+
+<Info>
+Session and message endpoints are public -- your client app can call them directly without exposing your API key.
+</Info>

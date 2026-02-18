@@ -56,7 +56,9 @@
             "group": "Guides",
             "pages": [
               "guides/training-data",
+              "guides/multi-user-isolation",
               "guides/streaming",
+              "guides/sdks",
               "guides/human-handoff",
               "guides/webhooks",
               "guides/visitor-identity"

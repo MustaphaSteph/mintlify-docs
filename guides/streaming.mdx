@@ -44,28 +44,48 @@ while (true) {
 A typical stream looks like this:
 
 ```
-message-start → text-start → text-delta (repeated) → text-end → finish → [DONE]
+message-start > text-start > text-delta (repeated) > text-end > finish > [DONE]
 ```
 
 For models with thinking capability (Claude, etc.):
 
 ```
-message-start → reasoning-start → reasoning-delta (repeated) → reasoning-end → text-start → text-delta (repeated) → text-end → finish → [DONE]
+message-start > reasoning-start > reasoning-delta (repeated) > reasoning-end > text-start > text-delta (repeated) > text-end > finish > [DONE]
 ```
 
 ## Event types
 
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `message-start` | `{ messageId }` | Stream begins |
-| `text-start` | `{ id }` | Response text begins |
-| `text-delta` | `{ id, delta }` | One token of response |
-| `text-end` | `{ id }` | Response text complete |
-| `reasoning-start` | `{ id }` | Model thinking begins |
-| `reasoning-delta` | `{ id, delta }` | One token of reasoning |
+| `message-start` | `{ messageId }` | Stream begins, includes saved message UUID |
+| `text-start` | `{ id }` | Response text block begins |
+| `text-delta` | `{ id, delta }` | One token of response text |
+| `text-end` | `{ id }` | Response text block complete |
+| `reasoning-start` | `{ id }` | Model thinking/reasoning begins |
+| `reasoning-delta` | `{ id, delta }` | One token of reasoning output |
 | `reasoning-end` | `{ id }` | Model thinking complete |
-| `finish` | `{ usage }` | Stream complete |
-| `error` | `{ message }` | Error occurred |
+| `finish` | `{ usage }` | Stream complete with `{ input, output }` token counts |
+| `heartbeat` | `{}` | Keepalive sent every ~15s during idle periods. Safe to ignore. |
+| `error` | `{ errorText, code, retryable, retryAfterMs }` | Error occurred during processing |
+
+## Raw SSE output
+
+```
+data: {"type":"message-start","messageId":"d0c5eb0e-f17e-4b86-87a0-06ed126ddf95"}
+data: {"type":"text-start","id":"t1"}
+data: {"type":"text-delta","id":"t1","delta":"To"}
+data: {"type":"text-delta","id":"t1","delta":" reset"}
+data: {"type":"text-delta","id":"t1","delta":" your"}
+data: {"type":"text-delta","id":"t1","delta":" password"}
+data: {"type":"text-delta","id":"t1","delta":","}
+data: {"type":"text-delta","id":"t1","delta":" go"}
+data: {"type":"text-delta","id":"t1","delta":" to"}
+data: {"type":"text-delta","id":"t1","delta":" Settings"}
+...
+data: {"type":"text-end","id":"t1"}
+data: {"type":"finish","usage":{"input":150,"output":42}}
+data: [DONE]
+```
 
 ## Python example
 
@@ -88,14 +108,49 @@ for line in response.iter_lines(decode_unicode=True):
     event = json.loads(data)
     if event["type"] == "text-delta":
         print(event["delta"], end="", flush=True)
+    elif event["type"] == "reasoning-delta":
+        # Optionally show model thinking
+        pass
+    elif event["type"] == "finish":
+        print(f"\nTokens used: input={event['usage']['input']}, output={event['usage']['output']}")
 ```
 
 ## Error handling
 
-If an error occurs mid-stream, you'll receive an `error` event:
+If an error occurs mid-stream, you receive an `error` event with retry information:
 
-```
-data: {"type":"error","message":"Rate limit exceeded"}
+```json
+{
+  "type": "error",
+  "errorText": "Rate limit exceeded",
+  "code": 429,
+  "retryable": true,
+  "retryAfterMs": 2000
+}
 ```
 
-Always handle the `error` event type in your parser and show an appropriate message to the user.
+When `retryable` is `true`, wait `retryAfterMs` milliseconds and retry the request. Non-retryable errors (invalid session, bot disabled, etc.) should be shown to the user.
+
+```javascript
+if (event.type === "error") {
+  if (event.retryable) {
+    await new Promise(r => setTimeout(r, event.retryAfterMs));
+    // Retry the request
+  } else {
+    showError(event.errorText);
+  }
+}
+```
+
+## Idempotency
+
+Use the `Idempotency-Key` header to prevent duplicate messages if a request is retried:
+
+```bash
+curl -N -X POST https://api.answira.com/v1/messages/stream \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: msg-unique-001" \
+  -d '{"session_id": "ses_123", "message": "Hello"}'
+```
+
+If the same `Idempotency-Key` is sent again, the API returns `409 Conflict` instead of creating a duplicate message.
