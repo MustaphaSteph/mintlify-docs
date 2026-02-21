@@ -7,12 +7,14 @@ Webhooks let you receive HTTP POST notifications when events happen in your chat
 
 ## Setup
 
+Create a webhook via the API or from the dashboard (**Agent > Publish > Webhooks**).
+
 ```bash
 curl -X POST https://api.answira.com/v1/chatbots/bot_abc/webhooks \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://api.yourapp.com/webhooks/bgai",
+    "url": "https://api.yourapp.com/webhooks/answira",
     "events": ["conversation.started", "lead.captured", "handoff.triggered"]
   }'
 ```
@@ -22,52 +24,57 @@ The response includes a `secret` — **store it securely**. It's only shown once
 ```json
 {
   "id": "wh_abc123",
+  "url": "https://api.yourapp.com/webhooks/answira",
   "secret": "a1b2c3d4e5f6...",
-  ...
+  "events": ["conversation.started", "lead.captured", "handoff.triggered"],
+  "enabled": true,
+  "failure_count": 0
 }
 ```
 
+<Warning>
+  The signing secret is returned **only once** when you create the webhook. If you lose it, delete the webhook and create a new one.
+</Warning>
+
 ## Payload format
 
-All webhook payloads follow this structure:
+Every webhook delivery is an HTTP POST with a JSON body:
 
 ```json
 {
   "event": "conversation.started",
   "chatbot_id": "bot_abc123",
-  "timestamp": "2025-01-15T10:30:00Z",
+  "timestamp": "2025-01-15T10:30:00.000000Z",
   "data": {
     "conversation_id": "conv_xyz",
-    "visitor_name": "John",
-    "visitor_email": "john@example.com",
-    "page_url": "https://acme.com/pricing"
+    "session_id": "sess_789"
   }
 }
 ```
 
+The `timestamp` is always UTC in ISO 8601 format. The `data` object varies by event type.
+
 ## Events
 
-| Event | Triggered when | Key data fields |
-|-------|---------------|-----------------|
-| `conversation.started` | New conversation begins | `conversation_id`, visitor info |
-| `conversation.ended` | Conversation is closed | `conversation_id`, `duration` |
-| `message.received` | New message sent | `message_id`, `content`, `role` |
-| `handoff.triggered` | AI transfers to human | `reason`, `conversation_id` |
-| `handoff.resolved` | Agent resolves handoff | `agent_id`, `resolution_time` |
-| `lead.captured` | Lead form submitted | `name`, `email`, `phone` |
-| `training.started` | Training begins | `session_id`, `item_count`, `titles` |
-| `training.completed` | Training succeeds | `files_succeeded`, `total_chunks_stored`, `results` |
+| Event | Triggered when | Data fields |
+|-------|---------------|-------------|
+| `conversation.started` | First message in a new session | `conversation_id`, `session_id` |
+| `conversation.ended` | Conversation marked as resolved | `conversation_id`, `resolved_by`, `resolution_type` |
+| `message.received` | AI sends a response | `conversation_id`, `session_id`, `tokens_in`, `tokens_out` |
+| `handoff.triggered` | AI requests human agent | `conversation_id`, `session_id` |
+| `handoff.resolved` | Agent transfers back to AI | `conversation_id`, `agent_id`, `reason` |
+| `lead.captured` | Visitor submits contact form | `name`, `email`, `phone`, `notes` |
+| `training.started` | Training job begins | `session_id`, `source_type`, file/url details |
+| `training.completed` | Training finishes successfully | `files_succeeded`, `total_chunks_stored`, `results` |
 | `training.failed` | Training fails | `files_failed`, `results` |
 
-Use `*` to subscribe to all events.
+Use `"events": ["*"]` to subscribe to all events. Maximum 10 webhooks per chatbot.
 
 ## Signature verification
 
-Every webhook request includes an `X-Webhook-Signature` header containing an HMAC-SHA256 signature of the request body, signed with your webhook secret.
+Every webhook request includes an `X-Webhook-Signature` header with an HMAC-SHA256 signature of the raw request body, signed with your webhook secret.
 
 **Header format:** `sha256={hex_digest}`
-
-Always verify signatures to ensure requests are genuinely from Answira.
 
 <CodeGroup>
 ```python Python
@@ -101,8 +108,8 @@ function verifyWebhook(body, secret, signatureHeader) {
   );
 }
 
-// In your Express handler:
-// app.post('/webhooks/bgai', express.raw({type: 'application/json'}), (req, res) => {
+// Express example:
+// app.post('/webhooks/answira', express.raw({type: 'application/json'}), (req, res) => {
 //   const isValid = verifyWebhook(req.body, secret, req.headers['x-webhook-signature']);
 // });
 ```
@@ -112,15 +119,73 @@ function verifyWebhook(body, secret, signatureHeader) {
   If the `X-Webhook-Signature` header is missing or the signature doesn't match, reject the request with a `401` status.
 </Warning>
 
+## Replay protection
+
+The payload includes a `timestamp` field (UTC). To prevent replay attacks, reject any webhook where the timestamp is more than 5 minutes old:
+
+```python
+from datetime import datetime, timezone, timedelta
+
+webhook_time = datetime.fromisoformat(payload["timestamp"].replace("Z", "+00:00"))
+if datetime.now(timezone.utc) - webhook_time > timedelta(minutes=5):
+    return Response("Replay rejected", status_code=400)
+```
+
+The timestamp is included in the HMAC signature, so it cannot be tampered with.
+
 ## Delivery & retries
 
-- Webhooks are delivered within seconds of the event
-- If your endpoint returns a non-2xx status, delivery is marked as failed
-- Failed deliveries are retried up to 3 times with exponential backoff
-- After repeated failures, the webhook is automatically disabled
-- View delivery history: [`GET /webhook-logs`](/api-reference/webhook-logs)
-- Retry failed deliveries: [`POST /webhook-logs/{id}/retry`](/api-reference/webhook-logs)
+When an event occurs, Answira delivers the webhook to your URL:
+
+1. **First attempt** — delivered within seconds of the event
+2. **If your server returns non-2xx or times out (10s)** — retried up to 3 times with exponential backoff:
+   - Retry 1: after **2 seconds**
+   - Retry 2: after **4 seconds**
+   - Retry 3: after **8 seconds**
+3. **If all 3 retries fail** — the delivery is marked as a **dead letter** and your webhook's failure counter increments
+
+## Automatic disabling
+
+Answira tracks **consecutive failures** across all deliveries for each webhook:
+
+- Every failed delivery attempt increments the failure counter by 1
+- Every **successful** delivery resets the counter to 0
+- When the counter reaches **10 consecutive failures**, the webhook is **automatically disabled**
+
+This means a brief outage (a few failed deliveries) won't disable your webhook — only sustained failures will.
+
+### Re-enabling a disabled webhook
+
+You can re-enable a disabled webhook from the dashboard (**Agent > Publish > Webhooks** — click "Re-enable") or via the API:
+
+```bash
+curl -X PATCH https://api.answira.com/v1/webhooks/wh_abc123 \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+Re-enabling resets the failure counter to 0.
+
+## Delivery logs
+
+You can view delivery history and retry failed deliveries:
+
+- **Dashboard**: Agent > Publish > Webhooks > Delivery Logs tab
+- **API**: [`GET /chatbots/{id}/webhook-logs`](/api-reference/webhook-logs) — last 100 delivery attempts
+- **Retry**: [`POST /webhook-logs/{id}/retry`](/api-reference/webhook-logs) — re-enqueue a failed delivery
+
+Each log entry includes the event type, HTTP status code, attempt number, and any error message.
+
+## Best practices
 
 <Tip>
-  Always return a `200` status quickly from your webhook endpoint. Do heavy processing asynchronously to avoid timeouts.
+  **Return 200 quickly.** Process webhook payloads asynchronously (queue them) to avoid the 10-second timeout. A slow endpoint will trigger retries and eventually disable your webhook.
 </Tip>
+
+- **Always verify signatures** — reject unsigned or invalid requests
+- **Use replay protection** — reject timestamps older than 5 minutes
+- **Respond with 2xx immediately** — do heavy processing in the background
+- **Monitor your failure count** — if it's climbing, check your endpoint health
+- **Use `*` sparingly** — subscribe only to events you need to reduce noise
+- **Store the secret securely** — treat it like a password (environment variable, secrets manager)
