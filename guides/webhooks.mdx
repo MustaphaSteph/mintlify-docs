@@ -17,6 +17,16 @@ curl -X POST https://api.answira.com/v1/chatbots/bot_abc/webhooks \
   }'
 ```
 
+The response includes a `secret` — **store it securely**. It's only shown once and you need it to verify signatures.
+
+```json
+{
+  "id": "wh_abc123",
+  "secret": "a1b2c3d4e5f6...",
+  ...
+}
+```
+
 ## Payload format
 
 All webhook payloads follow this structure:
@@ -45,22 +55,71 @@ All webhook payloads follow this structure:
 | `handoff.triggered` | AI transfers to human | `reason`, `conversation_id` |
 | `handoff.resolved` | Agent resolves handoff | `agent_id`, `resolution_time` |
 | `lead.captured` | Lead form submitted | `name`, `email`, `phone` |
-| `training.started` | Training begins | `session_id`, `source_count` |
-| `training.completed` | Training succeeds | `chunks_created` |
-| `training.failed` | Training fails | `error_message` |
+| `training.started` | Training begins | `session_id`, `item_count`, `titles` |
+| `training.completed` | Training succeeds | `files_succeeded`, `total_chunks_stored`, `results` |
+| `training.failed` | Training fails | `files_failed`, `results` |
 
 Use `*` to subscribe to all events.
+
+## Signature verification
+
+Every webhook request includes an `X-Webhook-Signature` header containing an HMAC-SHA256 signature of the request body, signed with your webhook secret.
+
+**Header format:** `sha256={hex_digest}`
+
+Always verify signatures to ensure requests are genuinely from Answira.
+
+<CodeGroup>
+```python Python
+import hmac
+import hashlib
+
+def verify_webhook(body: bytes, secret: str, signature_header: str) -> bool:
+    expected = "sha256=" + hmac.new(
+        secret.encode(), body, hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature_header)
+
+# In your endpoint handler:
+# body = request body as raw bytes
+# secret = the secret from the webhook create response
+# signature = request.headers["X-Webhook-Signature"]
+is_valid = verify_webhook(body, secret, signature)
+```
+
+```javascript Node.js
+const crypto = require('crypto');
+
+function verifyWebhook(body, secret, signatureHeader) {
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(signatureHeader)
+  );
+}
+
+// In your Express handler:
+// app.post('/webhooks/bgai', express.raw({type: 'application/json'}), (req, res) => {
+//   const isValid = verifyWebhook(req.body, secret, req.headers['x-webhook-signature']);
+// });
+```
+</CodeGroup>
+
+<Warning>
+  If the `X-Webhook-Signature` header is missing or the signature doesn't match, reject the request with a `401` status.
+</Warning>
 
 ## Delivery & retries
 
 - Webhooks are delivered within seconds of the event
 - If your endpoint returns a non-2xx status, delivery is marked as failed
+- Failed deliveries are retried up to 3 times with exponential backoff
+- After repeated failures, the webhook is automatically disabled
 - View delivery history: [`GET /webhook-logs`](/api-reference/webhook-logs)
-- Retry failed deliveries manually via the API or dashboard
-
-## Security
-
-Validate webhook authenticity by checking the request origin and implementing signature verification on your endpoint.
+- Retry failed deliveries: [`POST /webhook-logs/{id}/retry`](/api-reference/webhook-logs)
 
 <Tip>
   Always return a `200` status quickly from your webhook endpoint. Do heavy processing asynchronously to avoid timeouts.

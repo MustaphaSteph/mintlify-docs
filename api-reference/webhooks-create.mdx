@@ -6,6 +6,10 @@ description: Subscribe to chatbot events
 
 Requires `webhooks:write` scope. Max 10 webhooks per chatbot.
 
+<Warning>
+  The signing `secret` is returned **only once** in the create response. Store it securely — you will need it to verify webhook signatures.
+</Warning>
+
 <ParamField path="chatbot_id" type="string" required>
   The chatbot ID.
 </ParamField>
@@ -49,8 +53,12 @@ curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/webhooks \
 ```json 201
 {
   "id": "wh_abc123",
+  "chatbot_id": "bot_abc123",
   "url": "https://api.yourapp.com/webhooks/bgai",
   "events": ["conversation.started", "handoff.triggered", "lead.captured"],
+  "enabled": true,
+  "failure_count": 0,
+  "secret": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
   "created_at": "2025-01-15T10:00:00Z"
 }
 ```
