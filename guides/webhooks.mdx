@@ -47,7 +47,11 @@ Every webhook delivery is an HTTP POST with a JSON body:
   "timestamp": "2025-01-15T10:30:00.000000Z",
   "data": {
     "conversation_id": "conv_xyz",
-    "session_id": "sess_789"
+    "session_id": "sess_789",
+    "variables": {
+      "user_id": "alice",
+      "plan": "premium"
+    }
   }
 }
 ```
@@ -58,17 +62,58 @@ The `timestamp` is always UTC in ISO 8601 format. The `data` object varies by ev
 
 | Event | Triggered when | Data fields |
 |-------|---------------|-------------|
-| `conversation.started` | First message in a new session | `conversation_id`, `session_id` |
-| `conversation.ended` | Conversation marked as resolved | `conversation_id`, `resolved_by`, `resolution_type` |
-| `message.received` | AI sends a response | `conversation_id`, `session_id`, `tokens_in`, `tokens_out` |
-| `handoff.triggered` | AI requests human agent | `conversation_id`, `session_id` |
-| `handoff.resolved` | Agent transfers back to AI | `conversation_id`, `agent_id`, `reason` |
+| `conversation.started` | First message in a new session | `conversation_id`, `session_id`, `variables` |
+| `conversation.ended` | Conversation marked as resolved | `conversation_id`, `resolved_by`, `resolution_type`, `variables` |
+| `message.received` | AI sends a response | `conversation_id`, `session_id`, `tokens_in`, `tokens_out`, `variables` |
+| `handoff.triggered` | AI requests human agent | `conversation_id`, `session_id`, `variables` |
+| `handoff.resolved` | Agent transfers back to AI | `conversation_id`, `agent_id`, `reason`, `variables` |
 | `lead.captured` | Visitor submits contact form | `name`, `email`, `phone`, `notes` |
 | `training.started` | Training job begins | `session_id`, `source_type`, file/url details |
-| `training.completed` | Training finishes successfully | `files_succeeded`, `total_chunks_stored`, `results` |
-| `training.failed` | Training fails | `files_failed`, `results` |
+| `training.completed` | Training finishes successfully | `session_id`, `source_type`, `files_succeeded`, `total_chunks_stored`, `results` (each result includes `data_source_id`) |
+| `training.failed` | Training fails | `session_id`, `source_type`, `files_failed`, `results` |
 
 Use `"events": ["*"]` to subscribe to all events. Maximum 10 webhooks per chatbot.
+
+<Tip>
+  **Session variables** are included in all conversation webhooks (`conversation.*`, `message.*`, `handoff.*`). These are the variables your integration passed when starting the session via `customer_metadata.variables`. Use them to correlate webhook events with your own users and data.
+</Tip>
+
+### Training event payloads
+
+The `training.completed` event includes a `results` array with per-file details. Each successful result includes a `data_source_id` you can use to delete that trained data later via the API.
+
+```json
+{
+  "event": "training.completed",
+  "chatbot_id": "bot_abc123",
+  "timestamp": "2025-01-15T10:30:00.000000Z",
+  "data": {
+    "session_id": "sess_789",
+    "source_type": "file",
+    "files_succeeded": 2,
+    "files_failed": 0,
+    "total_chunks_stored": 45,
+    "results": [
+      {
+        "filename": "product-docs.pdf",
+        "status": "success",
+        "chunks": 30,
+        "data_source_id": "ds_abc123"
+      },
+      {
+        "filename": "faq.csv",
+        "status": "success",
+        "chunks": 15,
+        "data_source_id": "ds_def456"
+      }
+    ]
+  }
+}
+```
+
+<Tip>
+  Store the `data_source_id` from the results — you can use it to delete specific trained data via `DELETE /v1/chatbots/{id}/data-sources/{data_source_id}`.
+</Tip>
 
 ## Signature verification
 
