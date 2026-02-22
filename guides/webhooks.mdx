@@ -10,11 +10,11 @@ Webhooks let you receive HTTP POST notifications when events happen in your chat
 Create a webhook via the API or from the dashboard (**Agent > Publish > Webhooks**).
 
 ```bash
-curl -X POST https://api.answira.com/v1/chatbots/bot_abc/webhooks \
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc/webhooks \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "url": "https://api.yourapp.com/webhooks/answira",
+    "url": "https://api.yourapp.com/webhooks/cleveract",
     "events": ["conversation.started", "lead.captured", "handoff.triggered"]
   }'
 ```
@@ -24,7 +24,7 @@ The response includes a `secret` — **store it securely**. It's only shown once
 ```json
 {
   "id": "wh_abc123",
-  "url": "https://api.yourapp.com/webhooks/answira",
+  "url": "https://api.yourapp.com/webhooks/cleveract",
   "secret": "a1b2c3d4e5f6...",
   "events": ["conversation.started", "lead.captured", "handoff.triggered"],
   "enabled": true,
@@ -93,6 +93,9 @@ The `training.completed` event includes a `results` array with per-file details.
     "files_succeeded": 2,
     "files_failed": 0,
     "total_chunks_stored": 45,
+    "custom_metadata": {
+      "user_id": "alice"
+    },
     "results": [
       {
         "filename": "product-docs.pdf",
@@ -110,6 +113,10 @@ The `training.completed` event includes a `results` array with per-file details.
   }
 }
 ```
+
+<Tip>
+  The `custom_metadata` field mirrors whatever you passed in the training request. Use it to identify which user or category the trained data belongs to.
+</Tip>
 
 <Tip>
   Store the `data_source_id` from the results — you can use it to delete specific trained data via `DELETE /v1/chatbots/{id}/data-sources/{data_source_id}`.
@@ -154,7 +161,7 @@ function verifyWebhook(body, secret, signatureHeader) {
 }
 
 // Express example:
-// app.post('/webhooks/answira', express.raw({type: 'application/json'}), (req, res) => {
+// app.post('/webhooks/cleveract', express.raw({type: 'application/json'}), (req, res) => {
 //   const isValid = verifyWebhook(req.body, secret, req.headers['x-webhook-signature']);
 // });
 ```
@@ -180,7 +187,7 @@ The timestamp is included in the HMAC signature, so it cannot be tampered with.
 
 ## Delivery & retries
 
-When an event occurs, Answira delivers the webhook to your URL:
+When an event occurs, CleverAct AI delivers the webhook to your URL:
 
 1. **First attempt** — delivered within seconds of the event
 2. **If your server returns non-2xx or times out (10s)** — retried up to 3 times with exponential backoff:
@@ -191,7 +198,7 @@ When an event occurs, Answira delivers the webhook to your URL:
 
 ## Automatic disabling
 
-Answira tracks **consecutive failures** across all deliveries for each webhook:
+CleverAct AI tracks **consecutive failures** across all deliveries for each webhook:
 
 - Every failed delivery attempt increments the failure counter by 1
 - Every **successful** delivery resets the counter to 0
@@ -204,7 +211,7 @@ This means a brief outage (a few failed deliveries) won't disable your webhook �
 You can re-enable a disabled webhook from the dashboard (**Agent > Publish > Webhooks** — click "Re-enable") or via the API:
 
 ```bash
-curl -X PATCH https://api.answira.com/v1/webhooks/wh_abc123 \
+curl -X PATCH https://api.cleveract.ai/v1/webhooks/wh_abc123 \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{"enabled": true}'
