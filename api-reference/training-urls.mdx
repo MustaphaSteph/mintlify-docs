@@ -22,9 +22,21 @@ Requires `training:write` scope. Rate limit: 10/minute.
   How to split content: `auto`, `individual`, or `semantic_groups`.
 </ParamField>
 
+<ParamField body="custom_metadata" type="object">
+  Optional metadata tags attached to every chunk created from these URLs. Used for filtering at query time.
+
+  If your chatbot has variables with `auto_filter` enabled, include the variable values here so data is tagged for per-user isolation:
+
+  ```json
+  { "user_id": "alice" }
+  ```
+
+  See [Multi-User Isolation](/guides/multi-user-isolation) for details.
+</ParamField>
+
 <RequestExample>
 ```bash cURL
-curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/training/urls \
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/urls \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -33,6 +45,16 @@ curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/training/urls \
       "https://acme.com/docs/api-reference"
     ],
     "mode": "individual"
+  }'
+```
+
+```bash cURL (with metadata for per-user isolation)
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/urls \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "urls": ["https://acme.com/alice/docs"],
+    "custom_metadata": { "user_id": "alice" }
   }'
 ```
 </RequestExample>

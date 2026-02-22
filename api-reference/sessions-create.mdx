@@ -11,7 +11,7 @@ description: Create a new chat session for a visitor
 </ParamField>
 
 <ParamField body="visitor_id" type="string">
-  Optional persistent visitor ID for session continuity.
+  Optional persistent visitor ID for session continuity. If a variable with `identity: true` is configured and no `visitor_id` is provided, the variable value is used automatically.
 </ParamField>
 
 <ParamField body="visitor_name" type="string">
@@ -27,7 +27,23 @@ description: Create a new chat session for a visitor
 </ParamField>
 
 <ParamField body="customer_metadata" type="object">
-  Custom key-value metadata to attach to the session.
+  Custom metadata to attach to the session. Use the `variables` key to pass chatbot variables configured in the dashboard (Advanced tab).
+
+  ```json
+  {
+    "variables": {
+      "user_id": "alice",
+      "plan": "premium"
+    }
+  }
+  ```
+
+  Variables control personalization, data isolation, and prompt injection:
+  - **Required** variables must be present or the request returns `400`
+  - **Auto Filter** variables automatically filter knowledge base search results
+  - **Identity** variables are used as the visitor identity for analytics
+
+  See [Multi-User Isolation](/guides/multi-user-isolation) for a full walkthrough.
 </ParamField>
 
 <ParamField body="identity_signature" type="string">
@@ -52,15 +68,64 @@ description: Create a new chat session for a visitor
   The chatbot's greeting message.
 </ResponseField>
 
+## Session variables
+
+If your chatbot has variables configured (dashboard **Advanced** tab or via `chatbot.settings.variables`), pass them in `customer_metadata.variables` when creating a session.
+
+### Variable flags
+
+| Flag | Effect |
+|------|--------|
+| `required` | Session creation fails with `400` if this variable is missing |
+| `auto_filter` | Knowledge base search is automatically filtered by this variable's value |
+| `auto_train` | Training data is automatically tagged with this variable's value |
+| `identity` | Variable value is used as visitor identity for analytics and session continuity |
+
+### Example: per-user data isolation
+
+```bash
+# Configure user_id as a required, auto-filtered variable
+curl -X PUT https://api.cleveract.ai/v1/chatbots/bot_abc123 \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "settings": {
+      "variables": {
+        "user_id": {
+          "required": true,
+          "auto_filter": true,
+          "auto_train": true,
+          "identity": true
+        }
+      }
+    }
+  }'
+
+# Start a session passing the variable
+curl -X POST https://api.cleveract.ai/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "bot_abc123",
+    "customer_metadata": {
+      "variables": { "user_id": "alice" }
+    }
+  }'
+```
+
+Alice's session will only retrieve knowledge base chunks tagged with `user_id: "alice"`.
+
 <RequestExample>
 ```bash cURL
-curl -X POST https://api.answira.com/v1/sessions \
+curl -X POST https://api.cleveract.ai/v1/sessions \
   -H "Content-Type: application/json" \
   -d '{
     "chatbot_id": "bot_abc123",
     "visitor_name": "John",
     "visitor_email": "john@example.com",
-    "page_url": "https://acme.com/pricing"
+    "page_url": "https://acme.com/pricing",
+    "customer_metadata": {
+      "variables": { "user_id": "john-123" }
+    }
   }'
 ```
 </RequestExample>

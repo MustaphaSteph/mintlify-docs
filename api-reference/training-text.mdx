@@ -23,18 +23,37 @@ Requires `training:write` scope. Rate limit: 10/minute. Returns `202 Accepted` â
 </ParamField>
 
 <ParamField body="custom_metadata" type="object">
-  Optional metadata tags for filtering.
+  Optional metadata tags attached to every chunk created from this content. Used for filtering at query time.
+
+  If your chatbot has variables with `auto_filter` enabled, include the variable values here so data is tagged for per-user isolation:
+
+  ```json
+  { "user_id": "alice", "category": "onboarding" }
+  ```
+
+  See [Multi-User Isolation](/guides/multi-user-isolation) for details.
 </ParamField>
 
 <RequestExample>
 ```bash cURL
-curl -X POST https://api.answira.com/v1/chatbots/bot_abc123/training/text \
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/text \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Pricing FAQ",
     "content": "Q: How much does it cost?\nA: Plans start at $29/month.\n\nQ: Is there a free trial?\nA: Yes, 14 days with full access.",
     "chunking_strategy": "individual"
+  }'
+```
+
+```bash cURL (with metadata for per-user isolation)
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/text \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Alice Knowledge Base",
+    "content": "Alice specific content here...",
+    "custom_metadata": { "user_id": "alice" }
   }'
 ```
 </RequestExample>
