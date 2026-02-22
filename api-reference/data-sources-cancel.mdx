@@ -1,0 +1,35 @@
+---
+title: Cancel Processing
+api: POST /v1/data-sources/{source_id}/cancel
+description: Cancel a stuck processing or pending data source
+---
+
+Cancel a data source that is stuck in `processing` or `pending` state. Marks it as `failed` so it can be retried or deleted.
+
+Requires `training:write` scope.
+
+<ParamField path="source_id" type="string" required>
+  The data source ID to cancel.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.cleveract.ai/v1/data-sources/ds_001/cancel \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "status": "cancelled",
+  "data_source_id": "ds_001"
+}
+```
+
+```json 400
+{
+  "detail": "Data source is not currently processing"
+}
+```
+</ResponseExample>

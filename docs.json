@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "name": "BGAI",
+  "name": "CleverAct AI",
   "logo": {
     "light": "/images/logo-light.svg",
     "dark": "/images/logo-dark.svg"
@@ -15,12 +15,12 @@
   "topbarLinks": [
     {
       "name": "Dashboard",
-      "url": "https://app.answira.com"
+      "url": "https://app.cleveract.ai"
     }
   ],
   "topbarCtaButton": {
     "name": "Get Started",
-    "url": "https://app.answira.com/register"
+    "url": "https://app.cleveract.ai/register"
   },
   "navigation": {
     "anchors": [
@@ -116,6 +116,7 @@
               "api-reference/training-files",
               "api-reference/training-status",
               "api-reference/data-sources-list",
+              "api-reference/data-sources-cancel",
               "api-reference/data-sources-delete"
             ]
           },
@@ -141,7 +142,7 @@
     ]
   },
   "api": {
-    "baseUrl": "https://api.answira.com",
+    "baseUrl": "https://api.cleveract.ai",
     "auth": {
       "method": "key",
       "name": "X-API-Key"
