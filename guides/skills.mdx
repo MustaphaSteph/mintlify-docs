@@ -1,0 +1,101 @@
+---
+title: Skills
+description: Extend your chatbot with reusable capability packs
+---
+
+Skills are reusable capability packs that give your chatbot new abilities beyond answering questions from training data. Enable skills from the dashboard to add web search, lead capture, sandbox code execution, and custom integrations.
+
+## How skills work
+
+1. **Create or browse skills** in the dashboard (Agent Hub > Skills tab)
+2. **Enable a skill** on a chatbot — this registers the skill's tools so the AI can call them during conversations
+3. **Configure credentials** — some skills need API keys or secrets (e.g. a weather API key)
+4. **Chat normally** — the AI decides when to use the skill's tools based on the conversation
+
+## Built-in skills
+
+| Skill | What it does |
+|-------|-------------|
+| **Web Search** | Searches the web for real-time information |
+| **Lead Capture** | Collects visitor contact info (name, email, phone) |
+| **Calculator** | Runs calculations via sandbox script |
+
+## Custom skills
+
+Create your own skills with:
+
+- **Sandbox scripts** — Python/Node.js/Bash scripts that run in a secure Docker sandbox
+- **HTTP tools** — External API calls with configurable URLs, headers, and body schemas
+- **Credential templates** — Securely store API keys and reference them in tools
+
+### Sandbox scripts
+
+Scripts run in an isolated Docker container with no internet access, limited CPU/RAM, and a read-only filesystem. They receive input as environment variables and return output via stdout.
+
+**Environment variables available to scripts:**
+
+| Variable | Source | Example |
+|----------|--------|---------|
+| `BOT_ID` | Always present | Bot identifier |
+| `USER_ID` | Always present | Bot owner identifier |
+| Agent kwargs | Passed by the AI when calling the tool | `NUMBERS`, `QUERY`, `INPUT` |
+| `VAR_{name}` | Session variables from `customer_metadata.variables` | `VAR_USER_ID`, `VAR_TENANT_ID` |
+| `CRED_{name}` | Decrypted skill credentials | `CRED_API_KEY`, `CRED_WEBHOOK_SECRET` |
+
+**Example script** (Python):
+```python
+import os
+
+user_id = os.environ.get("VAR_USER_ID", "unknown")
+api_key = os.environ.get("CRED_API_KEY", "")
+query = os.environ.get("QUERY", "")
+
+print(f"Running query '{query}' for user {user_id}")
+# Use api_key to call an external service...
+```
+
+## Session variables in skills
+
+When API callers pass `customer_metadata.variables` in a session, those values automatically flow into skills:
+
+```bash
+# Start a session with variables
+curl -X POST https://api.cleveract.ai/v1/sessions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "cb_xxx",
+    "customer_metadata": {
+      "variables": {
+        "user_id": "alice",
+        "tenant_id": "acme-corp"
+      }
+    }
+  }'
+```
+
+When a skill runs during this session:
+- Scripts see `VAR_USER_ID=alice` and `VAR_TENANT_ID=acme-corp`
+- Credential templates like `{{variables.tenant_id}}` resolve to `acme-corp`
+
+### Default values
+
+Variables configured in the dashboard with a `default` value are always available, even if the API caller doesn't send them. Per-session values override defaults.
+
+## Credential templates
+
+Skill credentials support `{{variables.X}}` template syntax. This lets you pass per-session secrets without hardcoding them:
+
+1. Set a skill credential to `{{variables.api_key}}` in the dashboard
+2. Pass the actual key per-session: `"variables": {"api_key": "sk-live-xxx"}`
+3. The script receives `CRED_API_KEY=sk-live-xxx`
+
+This is useful when different tenants have their own API keys for third-party services.
+
+## Skill visibility
+
+| Visibility | Who can enable |
+|------------|---------------|
+| **Built-in** | Any chatbot owner |
+| **Private** | Only the skill creator (owner) |
+
+Private skills created by one user cannot be enabled on another user's chatbots.

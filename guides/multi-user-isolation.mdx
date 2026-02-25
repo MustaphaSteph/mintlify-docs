@@ -17,7 +17,7 @@ The key to building per-user AI chatbots is **data isolation**. One bot, many us
 Add `user_id` as a required variable with auto-filtering enabled:
 
 ```bash
-curl -X PUT https://api.answira.com/v1/chatbots/{chatbot_id} \
+curl -X PUT https://api.cleveract.ai/v1/chatbots/{chatbot_id} \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -48,7 +48,7 @@ Include `custom_metadata.user_id` when training to associate data with a specifi
 
 ```bash
 # Train data for Alice
-curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
+curl -X POST https://api.cleveract.ai/v1/chatbots/{id}/training/text \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -58,7 +58,7 @@ curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
   }'
 
 # Train data for Bob
-curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
+curl -X POST https://api.cleveract.ai/v1/chatbots/{id}/training/text \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -81,7 +81,7 @@ Include the same `user_id` in session variables. The AI will only search trainin
 
 ```bash
 # Session for Alice -- only sees Alice's data
-curl -X POST https://api.answira.com/v1/sessions \
+curl -X POST https://api.cleveract.ai/v1/sessions \
   -H "Content-Type: application/json" \
   -d '{
     "chatbot_id": "cb_xxx",
@@ -97,7 +97,7 @@ curl -X POST https://api.answira.com/v1/sessions \
 Messages sent in Alice's session only retrieve chunks tagged with `user_id: "alice"`:
 
 ```bash
-curl -N -X POST https://api.answira.com/v1/messages/stream \
+curl -N -X POST https://api.cleveract.ai/v1/messages/stream \
   -H "Content-Type: application/json" \
   -d '{"session_id": "sess_alice_123", "message": "What are my notes about?"}'
 ```
@@ -110,6 +110,10 @@ When a variable is marked as `identity: true`, it automatically becomes the `vis
 
 - If you send `"user_id": "alice"` in variables and no `visitor_id`, the session's `visitor_id` becomes `"alice"`
 - This powers **conversation continuity** (same identity = resume conversation) and **analytics tracking** (unique users, returning, new)
+
+## Variables in skills
+
+Session variables are also injected into any [skills](/guides/skills) enabled on the bot. Sandbox scripts receive them as `VAR_` prefixed environment variables (e.g. `VAR_USER_ID`), and skill credentials can reference them with `{{variables.user_id}}` templates. This means your per-user data isolation variables can also drive skill behavior.
 
 ## Result
 
@@ -126,7 +130,7 @@ One bot, many users:
 import requests, time, json
 
 API_KEY = "ak_live_YOUR_KEY"
-BASE = "https://api.answira.com/v1"
+BASE = "https://api.cleveract.ai/v1"
 headers = {"X-API-Key": API_KEY, "Content-Type": "application/json"}
 
 # 1. Create bot with required user_id variable

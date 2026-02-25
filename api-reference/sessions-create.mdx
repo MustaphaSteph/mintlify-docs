@@ -81,6 +81,14 @@ If your chatbot has variables configured (dashboard **Advanced** tab or via `cha
 | `auto_train` | Training data is automatically tagged with this variable's value |
 | `identity` | Variable value is used as visitor identity for analytics and session continuity |
 
+### Variables in skills
+
+Session variables are automatically available to any [skills](/guides/skills) enabled on the chatbot:
+
+- **Sandbox scripts** receive variables as `VAR_` prefixed environment variables (e.g. `user_id` becomes `VAR_USER_ID`)
+- **Skill credentials** can reference variables using `{{variables.X}}` templates (e.g. set a credential value to `{{variables.api_key}}` and pass the actual key per-session)
+- **Decrypted credentials** are available to scripts as `CRED_` prefixed env vars (e.g. `CRED_API_KEY`)
+
 ### Example: per-user data isolation
 
 ```bash
