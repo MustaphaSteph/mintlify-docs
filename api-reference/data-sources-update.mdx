@@ -1,0 +1,62 @@
+---
+title: Update Data Source Metadata
+api: PATCH /v1/data-sources/{source_id}
+description: Update custom metadata on a data source and sync to vector store
+---
+
+Requires `training:write` scope.
+
+Merges the provided metadata keys into the data source's existing metadata. Existing keys are overwritten, new keys are added. The update is also synced to the vector store so search filters reflect the changes.
+
+The data source must be in `completed` or `failed` state — sources still in `processing` or `pending` cannot be updated.
+
+<ParamField path="source_id" type="string" required>
+  The data source ID.
+</ParamField>
+
+<ParamField body="metadata" type="object" required>
+  Key-value pairs to merge into the data source metadata. Values can be strings, numbers, booleans, or arrays.
+</ParamField>
+
+<RequestExample>
+```bash cURL
+curl -X PATCH https://api.cleveract.ai/v1/data-sources/ds_001 \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "category": "billing",
+      "language": "en",
+      "priority": "high"
+    }
+  }'
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "id": "ds_001",
+  "filename": "billing-faq.pdf",
+  "file_size": 24576,
+  "upload_date": "2025-01-10T08:00:00",
+  "processing_status": "completed",
+  "metadata": {
+    "category": "billing",
+    "language": "en",
+    "priority": "high"
+  }
+}
+```
+</ResponseExample>
+
+<ResponseExample>
+```json 400
+{
+  "detail": {
+    "code": "still_processing",
+    "message": "Cannot update metadata while source is processing"
+  }
+}
+```
+</ResponseExample>
