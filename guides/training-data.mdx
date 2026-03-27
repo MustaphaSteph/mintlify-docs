@@ -44,7 +44,7 @@ After uploading:
 ### All sessions
 
 ```bash
-curl https://api.answira.com/v1/chatbots/{chatbot_id}/training/status \
+curl https://api.cleveract.ai/v1/chatbots/{chatbot_id}/training/status \
   -H "X-API-Key: ak_live_YOUR_KEY"
 ```
 
@@ -69,7 +69,7 @@ curl https://api.answira.com/v1/chatbots/{chatbot_id}/training/status \
 ### Specific session
 
 ```bash
-curl https://api.answira.com/v1/chatbots/{chatbot_id}/training/status/{session_id} \
+curl https://api.cleveract.ai/v1/chatbots/{chatbot_id}/training/status/{session_id} \
   -H "X-API-Key: ak_live_YOUR_KEY"
 ```
 
@@ -111,7 +111,7 @@ headers = {"X-API-Key": api_key, "Content-Type": "application/json"}
 # 1. Fire off multiple training requests (all return 202 instantly)
 def train_doc(doc):
     resp = requests.post(
-        f"https://api.answira.com/v1/chatbots/{bot_id}/training/text",
+        f"https://api.cleveract.ai/v1/chatbots/{bot_id}/training/text",
         headers=headers,
         json={"title": doc["title"], "content": doc["content"]}
     )
@@ -130,7 +130,7 @@ with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
 # 2. Poll until all done
 while True:
     status = requests.get(
-        f"https://api.answira.com/v1/chatbots/{bot_id}/training/status",
+        f"https://api.cleveract.ai/v1/chatbots/{bot_id}/training/status",
         headers=headers
     ).json()
     print(f"Pending: {status['pending']}, Processing: {status['processing']}, Completed: {status['completed']}")
@@ -152,12 +152,12 @@ When you upload content, it gets split into **chunks** -- small searchable segme
 | `semantic_groups` | Groups related content | Long documents, manuals |
 
 ```bash
-curl -X POST https://api.answira.com/v1/chatbots/bot_abc/training/text \
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc/training/text \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "title": "Product FAQ",
-    "content": "Q: What is BGAI?\nA: An AI chatbot platform.\n\nQ: How much?\nA: Plans start at $29/month.",
+    "content": "Q: What is CleverAct AI?\nA: An AI chatbot platform.\n\nQ: How much?\nA: Plans start at $29/month.",
     "chunking_strategy": "individual"
   }'
 ```
@@ -167,7 +167,7 @@ curl -X POST https://api.answira.com/v1/chatbots/bot_abc/training/text \
 Tag training data with metadata for filtering at query time:
 
 ```bash
-curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
+curl -X POST https://api.cleveract.ai/v1/chatbots/{id}/training/text \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -181,6 +181,24 @@ curl -X POST https://api.answira.com/v1/chatbots/{id}/training/text \
 ```
 
 See the [Multi-User Isolation](/guides/multi-user-isolation) guide for how metadata enables per-user data filtering.
+
+### Updating metadata
+
+You can update metadata on existing data sources without re-uploading. New keys are added, existing keys are overwritten:
+
+```bash
+curl -X PATCH https://api.cleveract.ai/v1/data-sources/{data_source_id} \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata": {
+      "category": "billing",
+      "language": "en"
+    }
+  }'
+```
+
+Changes sync to the vector store automatically, so search filters reflect the update immediately. See the [API reference](/api-reference/data-sources-update) for full details.
 
 ## Tips for good training data
 
