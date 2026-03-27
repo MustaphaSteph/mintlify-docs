@@ -71,6 +71,7 @@ The `timestamp` is always UTC in ISO 8601 format. The `data` object varies by ev
 | `training.started` | Training job begins | `session_id`, `source_type`, file/url details |
 | `training.completed` | Training finishes successfully | `session_id`, `source_type`, `files_succeeded`, `total_chunks_stored`, `results` (each result includes `data_source_id`) |
 | `training.failed` | Training fails | `session_id`, `source_type`, `files_failed`, `results` |
+| `training.data_source_updated` | Data source metadata updated | `data_source_id`, `filename`, `metadata` |
 
 Use `"events": ["*"]` to subscribe to all events. Maximum 10 webhooks per chatbot.
 
