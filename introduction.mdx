@@ -1,30 +1,44 @@
 ---
 title: Introduction
-description: The universal AI agent platform — build, deploy, and scale intelligent agents for any use case
+description: Agent-as-a-Service — embed AI agents into any product so your users can interact with their data through natural conversation
 ---
 
 # Welcome to CleverAct AI
 
-CleverAct AI is a universal AI agent platform that lets you build intelligent agents trained on your data, extend them with skills and tools, connect them to any LLM provider, and deploy them anywhere — as a chat widget, full-page app, or via API.
+CleverAct AI is an **Agent-as-a-Service platform**. We give developers and businesses the infrastructure to embed intelligent AI agents directly into their products — so their end users can interact with their own data through natural conversation.
 
-It's not just a chatbot builder. It's the infrastructure for AI-powered automation — from customer support and sales to internal workflows, knowledge management, and custom AI applications.
+Train an agent on your knowledge base, connect it to your app's data via session variables, extend it with skills and tools, and deploy it in minutes. Your users get a smart assistant that knows their context, remembers their history, and can take actions on their behalf.
+
+<Note>
+  **Think of it this way:** Stripe is payments-as-a-service. Twilio is communications-as-a-service. CleverAct AI is **agents-as-a-service** — the API layer that makes any product AI-powered.
+</Note>
 
 ## What you can build
 
 <CardGroup cols={2}>
-  <Card title="AI Agents" icon="robot">
-    Create agents trained on any data source — docs, websites, files, APIs. They reason, search, use tools, and maintain memory across sessions.
+  <Card title="AI-Powered Products" icon="microchip">
+    Embed agents into your SaaS, marketplace, or app. Each user gets a personalized AI assistant that understands their data, their account, and their history — powered by your knowledge base.
   </Card>
-  <Card title="Live Chat & Handoff" icon="headset">
-    Real-time messaging with intelligent routing. AI handles first contact, detects escalation signals, and seamlessly hands off to human agents with full context.
+  <Card title="Customer Support Automation" icon="headset">
+    AI handles first contact with full context. When it detects escalation signals, it seamlessly hands off to human agents with skill-based, workload-aware routing.
   </Card>
   <Card title="Skills & Tools" icon="wand-magic-sparkles">
     Extend agents with reusable skill packs — web search, lead capture, HTTP requests, sandbox code execution, MCP tools, and custom scripts. Build once, enable on any bot.
   </Card>
   <Card title="Deploy Anywhere" icon="globe">
-    Embed a chat widget on any site, launch a full-page chat app, or integrate via REST API and webhooks. Multi-channel, multi-tenant, white-label ready.
+    Embed a chat widget on any site, launch a full-page chat app, or go headless via REST API. Multi-tenant, white-label ready, session-isolated per user.
   </Card>
 </CardGroup>
+
+## Why developers choose CleverAct AI
+
+Most AI platforms give you a chatbot. CleverAct gives you the **backend infrastructure** to make your entire product intelligent:
+
+- **Per-user isolation** — Each of your users gets their own agent session with their own context. Session variables (`user_id`, `plan`, `tenant_id`) flow into every AI interaction automatically.
+- **Your data, their conversation** — Train agents on your docs, APIs, and databases. Your users ask questions in natural language and get answers grounded in real data.
+- **Agent memory** — Agents remember facts across sessions. Your users don't repeat themselves.
+- **Extensible with code** — Skills run sandboxed scripts, call your APIs, and execute logic. Agents don't just answer questions — they take actions.
+- **Any LLM, no lock-in** — OpenAI, Claude, Gemini, DeepSeek, Mistral, or any OpenRouter model. Switch per bot, no code changes.
 
 ## Platform capabilities
 
@@ -61,27 +75,30 @@ It's not just a chatbot builder. It's the infrastructure for AI-powered automati
 ## How it works
 
 ```
-Your App / Website
+Your Product (SaaS, App, Website)
+    │
+    │  Pass user context: { user_id, email, plan, tenant_id, ... }
     ↓
-Chat Widget / Full-Page App / REST API
-    ↓
-CleverAct AI Platform
-    ├── AI Agent Runtime (PydanticAI)
-    │   ├── LLM Provider (OpenAI / Claude / Gemini / ...)
-    │   ├── Vector Search (semantic retrieval)
-    │   ├── Skills & Tools (web search, scripts, MCP)
-    │   └── Agent Memory (persistent per-user)
-    ├── Live Chat & Handoff Engine
-    │   ├── Smart Routing (skill / workload / round-robin)
-    │   └── Real-time WebSocket Messaging
+CleverAct AI API  ←──  Widget / Full-Page App / REST API / WebSocket
+    │
+    ├── Agent Runtime
+    │   ├── LLM (OpenAI / Claude / Gemini / DeepSeek / ...)
+    │   ├── Vector Search → Your Knowledge Base
+    │   ├── Skills & Tools → Your APIs, scripts, MCP servers
+    │   └── Memory → Persistent per-user facts & preferences
+    │
+    ├── Live Chat Engine
+    │   ├── AI ↔ Human Handoff (auto-detection)
+    │   └── Smart Routing (skill / workload / round-robin)
+    │
     ├── Training Pipeline
-    │   ├── PDF, DOCX, CSV, Text, URLs
-    │   └── Auto-chunking & Embedding
-    └── Analytics & Monitoring
-        ├── Conversation Metrics
-        ├── Agent Performance
-        └── Usage & Billing
+    │   └── PDFs, DOCX, CSVs, Text, URLs → Auto-chunk → Embed → Index
+    │
+    └── Analytics & Webhooks
+        └── Conversations, usage, performance → Your systems
 ```
+
+**The key idea:** Your users interact with the agent. The agent knows who they are (via session variables), what data to search (via your training data), and what actions to take (via skills). You control everything through the API and dashboard — the AI layer is invisible to your users.
 
 ## Next steps
 
