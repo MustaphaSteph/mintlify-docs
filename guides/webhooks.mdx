@@ -71,6 +71,7 @@ The `timestamp` is always UTC in ISO 8601 format. The `data` object varies by ev
 | `training.started` | Training job begins | `session_id`, `source_type`, file/url details |
 | `training.completed` | Training finishes successfully | `session_id`, `source_type`, `files_succeeded`, `total_chunks_stored`, `results` (each result includes `data_source_id`) |
 | `training.failed` | Training fails | `session_id`, `source_type`, `files_failed`, `results` |
+| `training.duplicate` | Upload skipped — content already exists | `source_type`, `duplicate_data_source_ids` or `duplicate_files`, `items_skipped` |
 | `training.data_source_updated` | Data source metadata updated | `data_source_id`, `filename`, `metadata` |
 
 Use `"events": ["*"]` to subscribe to all events. Maximum 10 webhooks per chatbot.
@@ -122,6 +123,25 @@ The `training.completed` event includes a `results` array with per-file details.
 <Tip>
   Store the `data_source_id` from the results — you can use it to delete specific trained data via `DELETE /v1/chatbots/{id}/data-sources/{data_source_id}`.
 </Tip>
+
+### Duplicate event payload
+
+The `training.duplicate` event fires when uploaded content is skipped because it already exists in the chatbot's knowledge base. This prevents your integration from waiting for a `training.completed` that never comes.
+
+```json
+{
+  "event": "training.duplicate",
+  "chatbot_id": "bot_abc123",
+  "timestamp": "2025-01-15T10:30:00.000000Z",
+  "data": {
+    "source_type": "file",
+    "duplicate_files": ["faq.csv (duplicate of ds_abc123)"],
+    "items_skipped": 1
+  }
+}
+```
+
+For text and URL sources, the payload includes `duplicate_data_source_ids` instead of `duplicate_files`.
 
 ## Signature verification
 

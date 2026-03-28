@@ -6,6 +6,8 @@ description: Add text content to the chatbot's knowledge base
 
 Requires `training:write` scope. Rate limit: 10/minute. Returns `202 Accepted` — processing is asynchronous.
 
+**Deduplication:** Content is automatically deduplicated by SHA-256 hash. If identical text was already uploaded to the same chatbot and is pending, processing, or completed, the request returns `200` with `"status": "duplicate"` instead of `202`.
+
 <ParamField path="chatbot_id" type="string" required>
   The chatbot ID.
 </ParamField>
@@ -59,11 +61,22 @@ curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/text \
 </RequestExample>
 
 <ResponseExample>
-```json 202
+```json 202 Accepted
 {
-  "session_id": "train_abc123",
-  "status": "queued",
-  "message": "Training data queued for processing"
+  "session_id": "text_a1b2c3d4e5f6",
+  "chatbot_id": "bot_abc123",
+  "status": "processing",
+  "data_source_ids": ["ds_abc123"],
+  "message": "Training started: 1 item(s)"
+}
+```
+
+```json 200 Duplicate
+{
+  "status": "duplicate",
+  "duplicate": true,
+  "data_source_ids": ["ds_abc123"],
+  "chatbot_id": "bot_abc123"
 }
 ```
 </ResponseExample>

@@ -4,7 +4,9 @@ api: POST /v1/chatbots/{chatbot_id}/training/urls
 description: Scrape and train from web pages
 ---
 
-Requires `training:write` scope. Rate limit: 10/minute.
+Requires `training:write` scope. Rate limit: 10/minute. Returns `202 Accepted` — processing is asynchronous.
+
+**Deduplication:** URLs are automatically deduplicated by SHA-256 hash of the URL string. If the same URL was already uploaded to the same chatbot and is pending, processing, or completed, it is skipped. If all URLs are duplicates, the request returns `200` with `"status": "duplicate"`.
 
 <ParamField path="chatbot_id" type="string" required>
   The chatbot ID.
@@ -60,11 +62,21 @@ curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/urls \
 </RequestExample>
 
 <ResponseExample>
-```json 202
+```json 202 Accepted
 {
-  "session_id": "train_def456",
-  "status": "queued",
-  "message": "2 URLs queued for processing"
+  "session_id": "url_a1b2c3d4e5f6",
+  "chatbot_id": "bot_abc123",
+  "status": "processing",
+  "message": "Training started: 2 URL(s)"
+}
+```
+
+```json 200 Duplicate
+{
+  "status": "duplicate",
+  "duplicate": true,
+  "data_source_ids": ["ds_abc123"],
+  "chatbot_id": "bot_abc123"
 }
 ```
 </ResponseExample>

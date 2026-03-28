@@ -87,15 +87,28 @@ curl https://api.cleveract.ai/v1/chatbots/{chatbot_id}/training/status/{session_
 
 <Tip>**Done when:** `is_active === false` and `pending === 0` and `processing === 0`. Poll every 2-3 seconds.</Tip>
 
+## Deduplication
+
+All training endpoints automatically deduplicate content using SHA-256 hashes:
+
+- **Text**: Hashes the content string
+- **URLs**: Hashes the URL string
+- **Files**: Hashes the raw file bytes
+
+If identical content was already uploaded to the same chatbot and is **pending**, **processing**, or **completed**, the duplicate is skipped. Failed data sources do **not** block re-upload, so you can retry after fixing issues.
+
+When all items in a request are duplicates, the response is `200` with `"status": "duplicate"` instead of `202`. Partial duplicates still return `202` — duplicate items appear in the `rejected_files` array.
+
+A `training.duplicate` webhook fires when duplicates are detected, so your integration isn't left waiting for a `training.completed` that never comes.
+
 ## Concurrency limits
 
 | Limit | Value |
 |-------|-------|
-| Per user | Up to **3 tasks** process concurrently |
-| Per upload session | Up to **3 files** process in parallel |
-| System-wide | 4 worker coroutines handle the global queue |
+| Per user | Up to **5 files** process concurrently |
+| System-wide | Up to **30 concurrent** AI chunking operations |
 
-Additional requests queue automatically and process as slots open.
+Additional requests are processed immediately via async tasks. No global queue — each upload fires directly.
 
 ### Parallel training example
 

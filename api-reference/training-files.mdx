@@ -1,17 +1,53 @@
 ---
 title: Train from Files
 api: POST /v1/chatbots/{chatbot_id}/training/files
-description: Upload files (base64-encoded) for training
+description: Upload files for training (multipart or base64)
 ---
 
 Requires `training:write` scope. Max 20 files per request, 50 MB per file. Supported formats: CSV, PDF, TXT, JSON.
+
+**Two upload methods are available:**
+- **Multipart** — `POST /v1/chatbots/{id}/training/files` with `Content-Type: multipart/form-data`
+- **Base64** — `POST /v1/chatbots/{id}/training/files/base64` with a JSON body
+
+Both endpoints return `202 Accepted` with a `session_id` for polling status.
+
+**Deduplication:** Files are automatically deduplicated by content hash (SHA-256). If an identical file was already uploaded to the same chatbot and is pending, processing, or completed, it is skipped. Duplicate files appear in the `rejected_files` array with a reason.
 
 <ParamField path="chatbot_id" type="string" required>
   The chatbot ID.
 </ParamField>
 
+## Multipart upload
+
+<ParamField body="files" type="file[]" required>
+  One or more files to upload.
+</ParamField>
+
+<ParamField body="chatbot_id" type="string" required>
+  Must match the path parameter.
+</ParamField>
+
+<ParamField body="chunking_strategy" type="string" default="auto">
+  How to split content: `auto`, `individual`, or `semantic_groups`.
+</ParamField>
+
+<ParamField body="custom_metadata" type="string">
+  JSON string of metadata tags attached to every chunk. Used for filtering at query time.
+
+  If your chatbot has variables with `auto_filter` enabled, include the variable values here so data is tagged for per-user isolation:
+
+  ```
+  {"user_id": "alice"}
+  ```
+
+  See [Multi-User Isolation](/guides/multi-user-isolation) for details.
+</ParamField>
+
+## Base64 upload
+
 <ParamField body="files" type="array" required>
-  Array of file objects with `filename` and `content` (base64-encoded).
+  Array of file objects with `filename` and `content_base64` (base64-encoded file content).
 </ParamField>
 
 <ParamField body="chunking_strategy" type="string" default="auto">
@@ -20,26 +56,27 @@ Requires `training:write` scope. Max 20 files per request, 50 MB per file. Suppo
 
 <ParamField body="custom_metadata" type="object">
   Optional metadata tags attached to every chunk created from these files. Used for filtering at query time.
-
-  If your chatbot has variables with `auto_filter` enabled, include the variable values here so data is tagged for per-user isolation:
-
-  ```json
-  { "user_id": "alice" }
-  ```
-
-  See [Multi-User Isolation](/guides/multi-user-isolation) for details.
 </ParamField>
 
 <RequestExample>
-```bash cURL
+```bash cURL (multipart)
 curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/files \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -F "chatbot_id=bot_abc123" \
+  -F "files=@faq.csv" \
+  -F "files=@guide.pdf" \
+  -F "chunking_strategy=auto"
+```
+
+```bash cURL (base64)
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/files/base64 \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "files": [
       {
         "filename": "faq.csv",
-        "content": "UXVlc3Rpb24sQW5zd2VyCiJXaGF0IGlzIENsZXZlckFjdD8iLCJBbiBBSSBjaGF0Ym90IHBsYXRmb3JtIg=="
+        "content_base64": "UXVlc3Rpb24sQW5zd2VyCiJXaGF0IGlzIENsZXZlckFjdD8iLCJBbiBBSSBjaGF0Ym90IHBsYXRmb3JtIg=="
       }
     ],
     "chunking_strategy": "auto"
@@ -47,14 +84,14 @@ curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/files \
 ```
 
 ```bash cURL (with metadata for per-user isolation)
-curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/files \
+curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/files/base64 \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "files": [
       {
         "filename": "alice-docs.pdf",
-        "content": "base64_encoded_content_here..."
+        "content_base64": "base64_encoded_content_here..."
       }
     ],
     "custom_metadata": { "user_id": "alice" }
@@ -63,11 +100,25 @@ curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc123/training/files \
 </RequestExample>
 
 <ResponseExample>
-```json 202
+```json 202 Accepted
 {
-  "status": "queued",
+  "status": "accepted",
+  "session_id": "upl_a1b2c3d4e5f6",
+  "chatbot_id": "bot_abc123",
+  "files_accepted": 2,
+  "files_rejected": 0,
+  "rejected_files": []
+}
+```
+
+```json 202 Accepted (with duplicates)
+{
+  "status": "accepted",
+  "session_id": "upl_a1b2c3d4e5f6",
+  "chatbot_id": "bot_abc123",
   "files_accepted": 1,
-  "message": "1 file queued for processing"
+  "files_rejected": 1,
+  "rejected_files": ["faq.csv (duplicate of ds_abc123)"]
 }
 ```
 </ResponseExample>
