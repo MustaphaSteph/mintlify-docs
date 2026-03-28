@@ -1,59 +1,98 @@
 ---
 title: Introduction
-description: Build AI-powered customer support agents with CleverAct AI
+description: The universal AI agent platform — build, deploy, and scale intelligent agents for any use case
 ---
 
 # Welcome to CleverAct AI
 
-CleverAct AI is an enterprise-ready AI chatbot platform that lets you create intelligent support agents, train them on your data, and embed them anywhere with a single script tag.
+CleverAct AI is a universal AI agent platform that lets you build intelligent agents trained on your data, extend them with skills and tools, connect them to any LLM provider, and deploy them anywhere — as a chat widget, full-page app, or via API.
+
+It's not just a chatbot builder. It's the infrastructure for AI-powered automation — from customer support and sales to internal workflows, knowledge management, and custom AI applications.
 
 ## What you can build
 
 <CardGroup cols={2}>
-  <Card title="AI Support Agents" icon="robot">
-    Create chatbots trained on your docs, FAQs, and knowledge base. They answer customer questions 24/7 with context-aware responses.
+  <Card title="AI Agents" icon="robot">
+    Create agents trained on any data source — docs, websites, files, APIs. They reason, search, use tools, and maintain memory across sessions.
   </Card>
-  <Card title="Human Handoff" icon="headset">
-    Automatically detect when a customer needs a real person and route the conversation to the right agent based on skills and availability.
+  <Card title="Live Chat & Handoff" icon="headset">
+    Real-time messaging with intelligent routing. AI handles first contact, detects escalation signals, and seamlessly hands off to human agents with full context.
   </Card>
-  <Card title="Custom Bots" icon="wand-magic-sparkles">
-    Build domain-specific bots for any use case — legal docs, medical records, code repos, product catalogs, and more.
+  <Card title="Skills & Tools" icon="wand-magic-sparkles">
+    Extend agents with reusable skill packs — web search, lead capture, HTTP requests, sandbox code execution, MCP tools, and custom scripts. Build once, enable on any bot.
   </Card>
-  <Card title="Embeddable Widget" icon="message-bot">
-    Drop a chat widget on any website with full customization — colors, fonts, position, greeting messages, and dark mode.
+  <Card title="Deploy Anywhere" icon="globe">
+    Embed a chat widget on any site, launch a full-page chat app, or integrate via REST API and webhooks. Multi-channel, multi-tenant, white-label ready.
   </Card>
 </CardGroup>
 
-## Key features
+## Platform capabilities
 
-- **Vector search** — Semantic retrieval from your training data using embeddings
-- **Streaming responses** — Real-time SSE streaming for instant token-by-token output
-- **Multi-model** — Choose from OpenAI, Anthropic Claude, Google Gemini, and more
-- **Skills** — Reusable capability packs (web search, lead capture, sandbox scripts) that extend your bot's abilities. Session variables and credentials are injected automatically
-- **Team management** — Invite agents, assign skills, route conversations intelligently
-- **Analytics** — Track conversations, response quality, handoff rates, and agent performance
-- **Webhooks** — Get notified on conversations, handoffs, leads, and training events
-- **API-first** — Full REST API with scoped API keys for programmatic access
+<CardGroup cols={3}>
+  <Card title="Multi-Model" icon="brain">
+    OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Mistral, and any OpenRouter model. Switch providers per bot without code changes.
+  </Card>
+  <Card title="Vector Search" icon="magnifying-glass">
+    Semantic retrieval powered by embeddings. Train on PDFs, DOCX, CSVs, text, URLs — the platform chunks, embeds, and indexes automatically.
+  </Card>
+  <Card title="Streaming" icon="bolt">
+    Real-time SSE streaming with token-by-token output, reasoning traces, and tool execution events. Sub-second time to first token.
+  </Card>
+  <Card title="Agent Memory" icon="brain-circuit">
+    Persistent per-user memory across sessions. Agents remember facts, preferences, and context — no re-explanation needed.
+  </Card>
+  <Card title="Teams & Routing" icon="users">
+    Multi-team support with skill-based, workload-based, and round-robin routing. Role-based access, agent presence, and performance tracking.
+  </Card>
+  <Card title="Analytics" icon="chart-mixed">
+    Conversation metrics, agent performance, usage tracking, customer health scoring, and real-time monitoring dashboards.
+  </Card>
+  <Card title="Webhooks" icon="webhook">
+    Event-driven notifications for conversations, handoffs, leads, training, and tool executions. Build integrations with any system.
+  </Card>
+  <Card title="API-First" icon="code">
+    Full REST API with scoped API keys, rate limiting, and auto-generated OpenAPI docs. Everything in the dashboard is available via API.
+  </Card>
+  <Card title="Session Variables" icon="sliders">
+    Pass user context (email, plan, tenant ID) into agent sessions. Variables flow into skills, credentials, and system prompts automatically.
+  </Card>
+</CardGroup>
 
-## Architecture overview
+## How it works
 
 ```
-Your Website → Chat Widget → CleverAct AI API → AI Model (OpenAI/Claude/Gemini)
-                                ↓
-                        Vector Search (Qdrant)
-                                ↓
-                        Knowledge Base (PostgreSQL)
-                                ↓
-                        Agent Dashboard (React)
+Your App / Website
+    ↓
+Chat Widget / Full-Page App / REST API
+    ↓
+CleverAct AI Platform
+    ├── AI Agent Runtime (PydanticAI)
+    │   ├── LLM Provider (OpenAI / Claude / Gemini / ...)
+    │   ├── Vector Search (semantic retrieval)
+    │   ├── Skills & Tools (web search, scripts, MCP)
+    │   └── Agent Memory (persistent per-user)
+    ├── Live Chat & Handoff Engine
+    │   ├── Smart Routing (skill / workload / round-robin)
+    │   └── Real-time WebSocket Messaging
+    ├── Training Pipeline
+    │   ├── PDF, DOCX, CSV, Text, URLs
+    │   └── Auto-chunking & Embedding
+    └── Analytics & Monitoring
+        ├── Conversation Metrics
+        ├── Agent Performance
+        └── Usage & Billing
 ```
 
 ## Next steps
 
-<CardGroup cols={2}>
+<CardGroup cols={3}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Create your first chatbot and embed it in 5 minutes.
+    Create your first agent and embed it in 5 minutes.
   </Card>
   <Card title="API Reference" icon="code" href="/api-reference/overview">
-    Explore the full REST API with examples.
+    Explore the full REST API with examples and SDKs.
+  </Card>
+  <Card title="Skills Guide" icon="puzzle-piece" href="/guides/skills">
+    Learn how to extend agents with skills, tools, and sandbox scripts.
   </Card>
 </CardGroup>
