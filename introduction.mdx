@@ -17,18 +17,29 @@ Train an agent on your knowledge base, connect it to your app's data via session
 
 <CardGroup cols={2}>
   <Card title="AI-Powered Products" icon="microchip">
-    Embed agents into your SaaS, marketplace, or app. Each user gets a personalized AI assistant that understands their data, their account, and their history — powered by your knowledge base.
+    Embed agents into your SaaS, marketplace, or app. Each user gets a personalized AI assistant that understands their data, account, and history. Users ask questions in natural language and the agent searches, reasons, and responds with grounded answers.
   </Card>
-  <Card title="Customer Support Automation" icon="headset">
-    AI handles first contact with full context. When it detects escalation signals, it seamlessly hands off to human agents with skill-based, workload-aware routing.
+  <Card title="Agents That Take Action" icon="wand-magic-sparkles">
+    Agents don't just answer questions — they do things. Connect skills that call your APIs, run scripts, execute workflows, and modify data inside your app. Your users say "cancel my order" and the agent actually does it.
   </Card>
-  <Card title="Skills & Tools" icon="wand-magic-sparkles">
-    Extend agents with reusable skill packs — web search, lead capture, HTTP requests, sandbox code execution, MCP tools, and custom scripts. Build once, enable on any bot.
+  <Card title="Knowledge Assistants" icon="book-open">
+    Train agents on docs, PDFs, websites, CSVs — any data source. Your users get instant answers from thousands of pages without reading a single one. Auto-chunking, embedding, and semantic search built in.
   </Card>
-  <Card title="Deploy Anywhere" icon="globe">
-    Embed a chat widget on any site, launch a full-page chat app, or go headless via REST API. Multi-tenant, white-label ready, session-isolated per user.
+  <Card title="Customer Support (Optional)" icon="headset">
+    For teams that need it: AI handles first contact, detects when a human is needed, and routes to the right agent with full context. Live chat, teams, presence, and smart routing included.
   </Card>
 </CardGroup>
+
+## Use cases
+
+| Who | What they build | How it works |
+|-----|----------------|--------------|
+| **SaaS companies** | In-app AI assistant | Users chat with their own data — orders, analytics, settings. Agent calls tools to take actions. |
+| **E-commerce** | Product advisor | Agent searches the catalog, answers specs questions, compares products, captures leads. |
+| **Education** | Course assistant | Students ask questions about course material. Agent searches lectures, PDFs, and transcripts. |
+| **Internal tools** | Employee copilot | Teams query company docs, policies, and databases through conversation instead of search. |
+| **Agencies** | White-label AI for clients | One platform, many bots. Each client gets their own trained agent with custom branding. |
+| **Support teams** | AI + human handoff | AI resolves common questions. Complex issues route to human agents automatically. |
 
 ## Why developers choose CleverAct AI
 
@@ -36,39 +47,40 @@ Most AI platforms give you a chatbot. CleverAct gives you the **backend infrastr
 
 - **Per-user isolation** — Each of your users gets their own agent session with their own context. Session variables (`user_id`, `plan`, `tenant_id`) flow into every AI interaction automatically.
 - **Your data, their conversation** — Train agents on your docs, APIs, and databases. Your users ask questions in natural language and get answers grounded in real data.
+- **Agents that act, not just talk** — Skills run sandboxed scripts, call your APIs, and execute logic. Pass credentials and variables per session so agents can operate on behalf of each user.
 - **Agent memory** — Agents remember facts across sessions. Your users don't repeat themselves.
-- **Extensible with code** — Skills run sandboxed scripts, call your APIs, and execute logic. Agents don't just answer questions — they take actions.
 - **Any LLM, no lock-in** — OpenAI, Claude, Gemini, DeepSeek, Mistral, or any OpenRouter model. Switch per bot, no code changes.
+- **Deploy in minutes** — One script tag for the widget, a few API calls for headless. No ML infrastructure to manage.
 
 ## Platform capabilities
 
 <CardGroup cols={3}>
   <Card title="Multi-Model" icon="brain">
-    OpenAI, Anthropic Claude, Google Gemini, DeepSeek, Mistral, and any OpenRouter model. Switch providers per bot without code changes.
+    OpenAI, Claude, Gemini, DeepSeek, Mistral, and any OpenRouter model. Switch providers per bot without code changes.
   </Card>
   <Card title="Vector Search" icon="magnifying-glass">
-    Semantic retrieval powered by embeddings. Train on PDFs, DOCX, CSVs, text, URLs — the platform chunks, embeds, and indexes automatically.
+    Semantic retrieval powered by embeddings. Train on PDFs, DOCX, CSVs, text, URLs — auto-chunked, embedded, and indexed.
   </Card>
   <Card title="Streaming" icon="bolt">
-    Real-time SSE streaming with token-by-token output, reasoning traces, and tool execution events. Sub-second time to first token.
+    Real-time SSE streaming with token-by-token output, reasoning traces, and tool execution events.
   </Card>
   <Card title="Agent Memory" icon="brain-circuit">
-    Persistent per-user memory across sessions. Agents remember facts, preferences, and context — no re-explanation needed.
+    Persistent per-user memory across sessions. Agents remember facts, preferences, and context automatically.
   </Card>
-  <Card title="Teams & Routing" icon="users">
-    Multi-team support with skill-based, workload-based, and round-robin routing. Role-based access, agent presence, and performance tracking.
+  <Card title="Skills & Tools" icon="puzzle-piece">
+    Web search, lead capture, HTTP requests, sandbox code execution, MCP tools, and custom scripts. Build once, enable on any bot.
+  </Card>
+  <Card title="Session Variables" icon="sliders">
+    Pass user context into agent sessions. Variables flow into skills, credentials, and system prompts automatically.
   </Card>
   <Card title="Analytics" icon="chart-mixed">
-    Conversation metrics, agent performance, usage tracking, customer health scoring, and real-time monitoring dashboards.
+    Conversation metrics, agent performance, usage tracking, and real-time monitoring dashboards.
   </Card>
   <Card title="Webhooks" icon="webhook">
-    Event-driven notifications for conversations, handoffs, leads, training, and tool executions. Build integrations with any system.
+    Event-driven notifications for conversations, training, tool executions, and more. Build integrations with any system.
   </Card>
   <Card title="API-First" icon="code">
     Full REST API with scoped API keys, rate limiting, and auto-generated OpenAPI docs. Everything in the dashboard is available via API.
-  </Card>
-  <Card title="Session Variables" icon="sliders">
-    Pass user context (email, plan, tenant ID) into agent sessions. Variables flow into skills, credentials, and system prompts automatically.
   </Card>
 </CardGroup>
 
@@ -87,15 +99,15 @@ CleverAct AI API  ←──  Widget / Full-Page App / REST API / WebSocket
     │   ├── Skills & Tools → Your APIs, scripts, MCP servers
     │   └── Memory → Persistent per-user facts & preferences
     │
-    ├── Live Chat Engine
-    │   ├── AI ↔ Human Handoff (auto-detection)
-    │   └── Smart Routing (skill / workload / round-robin)
-    │
     ├── Training Pipeline
     │   └── PDFs, DOCX, CSVs, Text, URLs → Auto-chunk → Embed → Index
     │
-    └── Analytics & Webhooks
-        └── Conversations, usage, performance → Your systems
+    ├── Analytics & Webhooks
+    │   └── Conversations, usage, performance → Your systems
+    │
+    └── Live Chat & Handoff (optional)
+        ├── AI ↔ Human Handoff (auto-detection)
+        └── Team Routing (skill / workload / round-robin)
 ```
 
 **The key idea:** Your users interact with the agent. The agent knows who they are (via session variables), what data to search (via your training data), and what actions to take (via skills). You control everything through the API and dashboard — the AI layer is invisible to your users.
