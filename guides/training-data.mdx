@@ -175,9 +175,84 @@ curl -X POST https://api.cleveract.ai/v1/chatbots/bot_abc/training/text \
   }'
 ```
 
+## Metadata schema
+
+Define metadata fields on your chatbot to control how AI extracts and structures data from training content. The schema tells the AI what fields to look for, how to type them, and how to use them during search.
+
+### Define fields via API
+
+```bash
+curl -X PUT https://api.cleveract.ai/v1/chatbots/{chatbot_id} \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "metadata_schema": {
+      "fields": [
+        {
+          "name": "date",
+          "type": "date",
+          "description": "Recording date in YYYY-MM-DD format",
+          "filterable": true,
+          "include_in_chunk": false
+        },
+        {
+          "name": "speaker_label",
+          "type": "text",
+          "description": "Which speaker said this utterance (e.g. Speaker A, Speaker B)",
+          "filterable": false,
+          "include_in_chunk": true
+        },
+        {
+          "name": "timestamps",
+          "type": "text",
+          "description": "Time range in HH:MM:SS to HH:MM:SS format",
+          "filterable": false,
+          "include_in_chunk": true
+        },
+        {
+          "name": "category",
+          "type": "select",
+          "description": "Content category",
+          "filterable": true,
+          "include_in_chunk": false,
+          "options": ["meeting", "lecture", "interview"]
+        }
+      ]
+    }
+  }'
+```
+
+### Field properties
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `name` | string | Field name (used as key in metadata) |
+| `type` | string | `text`, `number`, `date`, `boolean`, `tags`, `select` |
+| `description` | string | Tells the AI what this field is and how to extract it |
+| `filterable` | boolean | When `true`, the agent can filter search results by this field before semantic search |
+| `include_in_chunk` | boolean | When `true`, this field's data is always included in the chunk text — never dropped |
+| `options` | string[] | For `select` type — valid values |
+
+### Filterable fields
+
+When a field is `filterable: true`, your agent can narrow search results before doing semantic search. For example, if `date` is filterable and a user asks "What did we discuss last week?", the agent filters to recent dates first, then searches within those results.
+
+### Include in chunk
+
+When a field is `include_in_chunk: true`, the AI always preserves that field's data in the chunk text. This is important for structured content like transcripts — without it, the AI might sometimes drop timestamps or speaker labels from the chunk text.
+
+**Example:** A meeting transcript with `timestamps` and `speaker_label` set to `include_in_chunk: true` will always produce chunks like:
+
+```
+Speaker A (00:00:02 to 00:00:07): I wanted to start by going over the progress...
+Speaker B (00:00:07 to 00:00:17): The engineering team has completed the backend...
+```
+
+Without `include_in_chunk`, the AI might inconsistently format chunks — sometimes including timestamps, sometimes dropping them.
+
 ## Custom metadata
 
-Tag training data with metadata for filtering at query time:
+Tag training data with per-request metadata for filtering at query time:
 
 ```bash
 curl -X POST https://api.cleveract.ai/v1/chatbots/{id}/training/text \
@@ -192,6 +267,10 @@ curl -X POST https://api.cleveract.ai/v1/chatbots/{id}/training/text \
     }
   }'
 ```
+
+<Note>
+  **Metadata schema vs custom_metadata**: The schema (set on the chatbot) defines what fields the AI extracts automatically from content. `custom_metadata` (sent per request) adds static tags you already know — like `user_id` or `category`. Both end up in the chunk metadata and can be used for filtering.
+</Note>
 
 See the [Multi-User Isolation](/guides/multi-user-isolation) guide for how metadata enables per-user data filtering.
 
