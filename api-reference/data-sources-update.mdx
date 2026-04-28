@@ -14,7 +14,7 @@ The data source must be in `completed` or `failed` state — sources still in `p
   The data source ID.
 </ParamField>
 
-<ParamField body="metadata" type="object" required>
+<ParamField body="custom_metadata" type="object" required>
   Key-value pairs to merge into the data source metadata. Values can be strings, numbers, booleans, or arrays.
 </ParamField>
 
@@ -24,7 +24,7 @@ curl -X PATCH https://api.cleveract.ai/v1/data-sources/ds_001 \
   -H "X-API-Key: ak_live_YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "metadata": {
+    "custom_metadata": {
       "category": "billing",
       "language": "en",
       "priority": "high"
@@ -41,16 +41,14 @@ curl -X PATCH https://api.cleveract.ai/v1/data-sources/ds_001 \
   "file_size": 24576,
   "upload_date": "2025-01-10T08:00:00",
   "processing_status": "completed",
-  "metadata": {
+  "custom_metadata": {
     "category": "billing",
     "language": "en",
     "priority": "high"
   }
 }
 ```
-</ResponseExample>
 
-<ResponseExample>
 ```json 400
 {
   "detail": {

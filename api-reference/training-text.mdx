@@ -17,7 +17,9 @@ Requires `training:write` scope. Rate limit: 10/minute. Returns `202 Accepted` â
 </ParamField>
 
 <ParamField body="content" type="string" required>
-  The text content to train on.
+  The text content to train on. This must be a **string** â€” if you are sending structured data (JSON objects, transcripts), serialize it with `JSON.stringify()` before sending.
+
+  **Transcript detection:** If the content string contains JSON with `utterance`, `speaker_label`/`speaker`, and `timestamps`/`timestamp` fields, transcript mode activates automatically â€” every utterance is preserved verbatim in the format `(timestamps) speaker: utterance`.
 </ParamField>
 
 <ParamField body="chunking_strategy" type="string" default="auto">
@@ -25,13 +27,15 @@ Requires `training:write` scope. Rate limit: 10/minute. Returns `202 Accepted` â
 </ParamField>
 
 <ParamField body="custom_metadata" type="object">
-  Optional metadata tags attached to every chunk created from this content. Used for filtering at query time.
+  Optional metadata tags attached to every chunk created from this content. These are stored directly on each chunk and used for filtering at query time.
 
   If your chatbot has variables with `auto_filter` enabled, include the variable values here so data is tagged for per-user isolation:
 
   ```json
   { "user_id": "alice", "category": "onboarding" }
   ```
+
+  `custom_metadata` is applied immediately at training time â€” it does not go through the `auto_train` variable mechanism. Both approaches result in metadata on chunks, but `custom_metadata` is explicit (you set the values), while `auto_train` is automatic (the system tags chunks based on the session variable value).
 
   See [Multi-User Isolation](/guides/multi-user-isolation) for details.
 </ParamField>

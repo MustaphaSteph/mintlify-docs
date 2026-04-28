@@ -15,17 +15,46 @@ description: Send a message and receive a non-streaming AI response
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional unique key to prevent duplicate messages.
+  Optional unique key to prevent duplicate messages. If the same key is used again with different request data, returns `409`.
 </ParamField>
+
+<Note>
+  **Variables are session-level.** Variables set in `customer_metadata.variables` when [creating the session](/api-reference/sessions-create) persist for all messages in that session. You do not need to re-send variables with each message.
+</Note>
 
 <RequestExample>
 ```bash cURL
-curl -X POST https://api.answira.com/v1/messages \
+curl -X POST https://api.cleveract.ai/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
     "session_id": "ses_1234567890",
     "message": "What are your pricing plans?"
   }'
+```
+
+```python Python
+import requests
+
+response = requests.post(
+    "https://api.cleveract.ai/v1/messages",
+    json={
+        "session_id": "ses_1234567890",
+        "message": "What are your pricing plans?"
+    }
+)
+print(response.json())
+```
+
+```javascript JavaScript
+const response = await fetch("https://api.cleveract.ai/v1/messages", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    session_id: "ses_1234567890",
+    message: "What are your pricing plans?",
+  }),
+});
+const data = await response.json();
 ```
 </RequestExample>
 
@@ -40,6 +69,18 @@ curl -X POST https://api.answira.com/v1/messages \
   "sources_used": 2,
   "processing_time_ms": 1250,
   "requires_human_handoff": false
+}
+```
+
+```json 400
+{
+  "detail": "Message cannot be empty"
+}
+```
+
+```json 409
+{
+  "detail": "Idempotency key already used with different request data"
 }
 ```
 </ResponseExample>

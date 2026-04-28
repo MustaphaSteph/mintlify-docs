@@ -1,7 +1,7 @@
 ---
 title: List Data Sources
 api: GET /v1/chatbots/{chatbot_id}/data-sources
-description: List all training data sources for a chatbot
+description: List all training data sources for a chatbot with optional filtering and sorting
 ---
 
 Requires `training:read` scope.
@@ -14,9 +14,42 @@ Requires `training:read` scope.
   Pagination cursor from a previous response.
 </ParamField>
 
+<ParamField query="limit" type="integer" default="20">
+  Number of results per page (1–100).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by `custom_metadata.status` value (e.g. `active`, `superseded`).
+</ParamField>
+
+<ParamField query="filename_contains" type="string">
+  Substring match on filename (case-insensitive).
+</ParamField>
+
+<ParamField query="tag" type="string">
+  Filter where `custom_metadata.tags` array contains this value.
+</ParamField>
+
+<ParamField query="since" type="string">
+  ISO 8601 date — only sources uploaded on or after this date.
+</ParamField>
+
+<ParamField query="until" type="string">
+  ISO 8601 date — only sources uploaded on or before this date.
+</ParamField>
+
+<ParamField query="sort" type="string" default="upload_date:desc">
+  Sort order: `upload_date:asc` or `upload_date:desc`.
+</ParamField>
+
 <RequestExample>
 ```bash cURL
-curl https://api.answira.com/v1/chatbots/bot_abc123/data-sources \
+curl https://api.cleveract.ai/v1/chatbots/bot_abc123/data-sources \
+  -H "X-API-Key: ak_live_YOUR_KEY"
+```
+
+```bash cURL (with filters)
+curl "https://api.cleveract.ai/v1/chatbots/bot_abc123/data-sources?status=active&filename_contains=faq&sort=upload_date:asc" \
   -H "X-API-Key: ak_live_YOUR_KEY"
 ```
 </RequestExample>
@@ -24,15 +57,26 @@ curl https://api.answira.com/v1/chatbots/bot_abc123/data-sources \
 <ResponseExample>
 ```json 200
 {
-  "data_sources": [
+  "items": [
     {
       "id": "ds_001",
       "filename": "faq.csv",
-      "source_type": "File",
       "file_size": 24576,
       "processing_status": "completed",
-      "chunks_created": 45,
-      "upload_date": "2025-01-10T08:00:00Z"
+      "upload_date": "2025-01-10T08:00:00",
+      "custom_metadata": {
+        "status": "active",
+        "category": "billing",
+        "tags": ["faq", "pricing"]
+      }
+    },
+    {
+      "id": "ds_002",
+      "filename": "onboarding-guide.pdf",
+      "file_size": 102400,
+      "processing_status": "completed",
+      "upload_date": "2025-01-09T12:30:00",
+      "custom_metadata": null
     }
   ],
   "next_cursor": null

@@ -72,6 +72,10 @@ description: Create a new chat session for a visitor
 
 If your chatbot has variables configured (dashboard **Advanced** tab or via `chatbot.settings.variables`), pass them in `customer_metadata.variables` when creating a session.
 
+<Note>
+  **Variables are sticky for the session.** Once set at session creation, variables persist for every message in that session. You do not need to re-send variables with each [Send Message](/api-reference/messages-send) or [Stream Response](/api-reference/messages-stream) call.
+</Note>
+
 ### Variable flags
 
 | Flag | Effect |
