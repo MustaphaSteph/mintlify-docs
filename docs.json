@@ -60,6 +60,7 @@
               "guides/streaming",
               "guides/sdks",
               "guides/skills",
+              "guides/custom-tools",
               "guides/human-handoff",
               "guides/webhooks",
               "guides/visitor-identity"

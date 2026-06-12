@@ -1,0 +1,135 @@
+---
+title: Custom Tools
+description: Let your agent call external APIs — with custom headers powered by session variables
+---
+
+Custom tools let your AI agent call your own APIs during a conversation: look up an order, check account status, create a ticket. You define the endpoint once; the agent decides when to call it.
+
+There are two tool types:
+
+| Type | What it does |
+|------|--------------|
+| **HTTP tool** | Calls a REST endpoint you define (base URL, path, method, headers) |
+| **MCP tool** | Connects to an MCP server and exposes its tools to the agent |
+
+This guide covers HTTP tools. You can manage them from the dashboard (**Agent Hub → Tools**) or via the API.
+
+## Create an HTTP tool
+
+```bash
+curl -X POST https://api.cleveract.ai/v1/tools \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "get_order",
+    "chatbot_id": "YOUR_CHATBOT_ID",
+    "description": "Look up an order by its ID",
+    "use_when": "The user asks about an order status or order details",
+    "base_url": "https://api.example.com",
+    "path_template": "/orders/{order_id}",
+    "method": "GET",
+    "headers_template": {
+      "api_key": "{{api_key}}"
+    },
+    "query_schema": {
+      "order_id": {"type": "string"}
+    }
+  }'
+```
+
+| Field | Purpose |
+|-------|---------|
+| `use_when` | Tells the agent when to pick this tool |
+| `path_template` | Use `{param}` for dynamic segments — filled from tool arguments or session variables |
+| `headers_template` | Headers sent with every call — supports `{{variable}}` substitution (see below) |
+| `query_schema` / `body_schema` | Fields the agent collects before calling (GET → query params, POST → JSON body) |
+
+## Custom headers from variables
+
+Headers in `headers_template` support `{{variable}}` substitution from [session variables](/guides/multi-user-isolation). This is how you pass per-user credentials or tenant context to your API — **without the value ever being visible to the AI model**.
+
+The flow:
+
+1. **Define a variable** on the bot (with an optional default, and `required` if every session must provide it):
+
+```bash
+curl -X PUT https://api.cleveract.ai/v1/chatbots/{chatbot_id} \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "settings": {
+      "variables": {
+        "api_key": {"default": "", "required": true}
+      }
+    }
+  }'
+```
+
+2. **Reference it in the tool's headers** — the variable name is the header name:
+
+```json
+"headers_template": {
+  "api_key": "{{api_key}}",
+  "tenant_id": "{{tenant_id}}"
+}
+```
+
+In the dashboard, click **Add header** on the tool form and pick a variable — the row is created for you.
+
+3. **Send the per-session value** when creating a session:
+
+```bash
+curl -X POST https://api.cleveract.ai/v1/sessions \
+  -H "X-API-Key: ak_live_YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chatbot_id": "YOUR_CHATBOT_ID",
+    "customer_metadata": {
+      "variables": {"api_key": "user-specific-key-123"}
+    }
+  }'
+```
+
+When the agent calls the tool, your API receives:
+
+```
+GET /orders/12345
+api_key: user-specific-key-123
+tenant_id: acme-corp
+```
+
+<Note>
+Headers are resolved server-side at request time. The AI model only sees the tool's name, description, and input fields — header values (API keys, tokens) never enter the model context.
+</Note>
+
+### Required variables
+
+Mark a variable `"required": true` and session creation fails with a `400` if the value is missing — so a tool can never fire with an unresolved header.
+
+## Authorization header
+
+The `Authorization` header works the same way but has a dedicated field in the dashboard form (Auth Token). Via API, set it directly:
+
+```json
+"headers_template": {
+  "Authorization": "Bearer {{user_token}}"
+}
+```
+
+## Security
+
+- **Base URL allowlist** — calls are restricted to the tool's `base_url_allowlist`; the agent cannot redirect requests elsewhere
+- **SSRF protection** — resolved URLs are validated before every request
+- **Response limits** — responses are capped (`max_response_kb`, default 256 KB) and time-boxed (`timeout_seconds`, default 8s)
+
+## Managing tools via API
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /v1/tools` | Create an HTTP tool |
+| `POST /v1/tools/mcp` | Create an MCP tool |
+| `GET /v1/tools` | List your tools |
+| `GET /v1/chatbots/{chatbot_id}/tools` | List tools for a bot |
+| `PUT /v1/tools/{tool_id}` | Update a tool |
+| `DELETE /v1/tools/{tool_id}` | Delete a tool |
+| `POST /v1/bot-tools` | Enable/disable a tool on a bot (`{bot_id, tool_id, enabled}`) |
